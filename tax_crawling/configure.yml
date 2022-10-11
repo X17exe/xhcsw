@@ -1,0 +1,40 @@
+#单一窗口密码,只支持卡登录
+single_widow:
+    password: 88888888
+
+#rabbitmq配置
+rabbitmq:
+    host: '192.168.2.80'
+    port: 5672
+    exchange: 'hgBill.autoGetTax.topic.exchange'
+    queue: 'hgBill.autoGetTax'
+    routing_key: 'hgBill.autoGetTax'
+
+#税费文件上传接口配置
+upload_api:
+    # 数据源上传接口
+    api: 'http://192.168.2.120:8010/import/operationCustomsBillReportInfo/declare/uploadTaxMultipart'
+    # 上传类型，1：二进制文件流； 2：文件解析后的json对象 （默认为1）
+    upload_type: 1
+
+#本地文件配置
+localfile:
+    #file_path_prefix 需要与 save_path路径设置为相同路径
+    file_path_prefix: 'C:\taxefile\'
+    save_path: 'C:/taxefile/'
+    uploaded_path: 'C:/uploadedtax/'
+    uploadfail_path: 'C:/uploadfailtax/'
+    chromedebugwindow: 'C:/Users/admin/Desktop/chromedebugwindow.bat'
+
+#邮箱配置
+email:
+    #发件人邮箱
+    user: 'jiangfan@xhecloud.com'
+    #发件人邮箱密码
+    password: 'xhy@888888'
+    #发件人邮箱SMTP服务器
+    host: 'smtp.mxhichina.com'
+    #SMTP服务器端口
+    port: 465
+    #收件人邮箱,如有多个，请用英文逗号分隔
+    receiver: ['2224599145@qq.com']
