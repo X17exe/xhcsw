@@ -274,7 +274,9 @@ def analysis_taxfile(file):
                 goods_detail_list.append(singetax_goodsdict)
             taxbill_detail_dict1['税费单货物信息'] = goods_detail_list
             taxbill_detail_json = json.dumps(taxbill_detail_dict1, ensure_ascii=False)
-            return taxbill_detail_json
+
+            return str(taxbill_detail_json).replace("'", "")
+
         elif int(taxfilenumber) == 2:
             goods_detail_list1 = []
             goods_detail_list2 = []
