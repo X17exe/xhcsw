@@ -18,9 +18,12 @@ import json
 
 
 def read_yaml():
+    """
+    读取配置文件
+    """
     try:
-        # with open('C:/dist/monitor_downloadtax/configure.yml', encoding="utf-8") as y:
-        with open('C:/Users/admin/Desktop/tax_crawling/configure.yml', encoding="utf-8") as y:
+        with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
+        # with open('C:/Users/admin/Desktop/tax_crawling/configure.yml', encoding="utf-8") as y:
             yaml_data = yaml.safe_load(y)
         return yaml_data
     except BaseException as t:
@@ -28,6 +31,9 @@ def read_yaml():
 
 
 def except_send_email(ec):
+    """
+    发送程序终止邮件提示
+    """
     yag = yagmail.SMTP(user=read_yaml()['email']['user'],
                        password=read_yaml()['email']['password'],
                        host=read_yaml()['email']['host'],
@@ -40,6 +46,9 @@ def except_send_email(ec):
 
 
 def upload_send_email(uc):
+    """
+    发送税费文件爬取异常邮件提示
+    """
     yag = yagmail.SMTP(user=read_yaml()['email']['user'],
                        password=read_yaml()['email']['password'],
                        host=read_yaml()['email']['host'],
@@ -97,6 +106,9 @@ def close_inform(browser):
 
 
 def login_taxpage(browser):
+    """
+    程序开始执行，进入税费单界面等待rabbitmq返回待抓取信息
+    """
     try:
         browser.get('https://sz.singlewindow.cn/dyck/')
         browser.execute_script('() =>{ Object.defineProperties(navigator,{ webdriver:{ get: () => false } }) }')
@@ -123,7 +135,7 @@ def login_taxpage(browser):
         browser.switch_to.frame(browser.find_element_by_xpath('//div[@id="content"]/iframe'))
         taxes_transact = browser.find_element_by_xpath('//li[contains(text(), "税费办理")]')
         taxes_transact.click()
-        sleep(3)
+        sleep(6)
         browser.switch_to.window(browser.window_handles[1])
         should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
         current_url = browser.current_url
@@ -173,12 +185,18 @@ channel.queue_bind(exchange=read_yaml()['rabbitmq']['exchange'], queue=read_yaml
 
 
 def rand_sleep():
+    """
+    随机生成等待时间，等待该时间后再去抓取税单
+    """
     time = random.randint(1, 5)
     # time = random.randint(30, 60)
     return time
 
 
 def taxdetail_regular_extraction(*args):
+    """
+    读取税单表格详细内容后，传入生成详情信息字典
+    """
     tax_detailed_dict = {}
     # tax_detailed_dict['税单生成日期'] = ' ,'.join(re.findall(r"(.*?)    1/", *args))
     tax_detailed_dict['报关单号'] = ' ,'.join(re.findall(r"报关单号： (.*?) 税单序号", *args))
@@ -215,6 +233,9 @@ def taxdetail_regular_extraction(*args):
 
 def goodsdetail_regular_extraction(taxno, goodsname, quantity, company, currency, taxconversionrate, dutiableprice,
                                    valoremrate, specificrate, taxamount):
+    """
+    读取税单货物信息后，传入生成货物信息字典
+    """
     goods_detailed_dict = {}
     goods_detailed_dict['税号'] = ''.join(taxno)
     goods_detailed_dict['货名'] = ''.join(goodsname)
@@ -231,6 +252,9 @@ def goodsdetail_regular_extraction(taxno, goodsname, quantity, company, currency
 
 
 def analysis_taxfile(file):
+    """
+    解析抓取的税单，并转为json对象
+    """
     try:
         allgoods_list = []
         taxfilenumber = 0
@@ -246,7 +270,7 @@ def analysis_taxfile(file):
                         taxbill_detail_dict2 = taxdetail_regular_extraction(allfile_content)
                     taxfilenumber += 1
 
-                #  提取货物信息
+                #  提取货物信息,转为列表
                 if '税费单货物信息' in allfile_content:
                     detail = re.findall(r"折算率 税率 税率 (.*?)$", allfile_content)
                     strdetail = ''.join(detail)
@@ -302,35 +326,43 @@ def analysis_taxfile(file):
 
 
 def upload_json():
+    """
+    上传税单json对象
+    """
     try:
-        save_path = read_yaml()['localfile']['save_path']
+        save_pathj = read_yaml()['localfile']['save_path']
         uploaded_path = read_yaml()['localfile']['uploaded_path']
         uploadfail_path = read_yaml()['localfile']['uploadfail_path']
-        filelist = os.listdir(save_path)
-        filelist.sort(key=lambda fn: os.path.getmtime(save_path + '\\' + fn))
+        filelist = os.listdir(save_pathj)
+        filelist.sort(key=lambda fn: os.path.getmtime(save_pathj + '\\' + fn))
         name = ''.join(filelist[-1])
-        file_name = save_path + name
+        file_name = save_pathj + name
 
         url = read_yaml()['upload_api']['api']
-        header = {}
-        json = analysis_taxfile(file=file_name)
-        r = requests.post(url=url, headers=header, json=json)
-
-        code = int(r.json()['code'])
-        msg = r.json()['msg']
-        if code == 200:
-            shutil.move(file_name, uploaded_path)
-            print("文件 %s 上传成功！" % name)
-        else:
-            print("文件 %s 上传失败,原因：%s" % (name, msg))
-            uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-            upload_send_email(uc=uploadfail_content)
-            shutil.move(file_name, uploadfail_path)
+        # header = {}
+        json_data = analysis_taxfile(file=file_name)
+        print(json_data)
+        # r = requests.post(url=url, headers=header, json=json_data)
+        #
+        # code = int(r.json()['code'])
+        # msg = r.json()['msg']
+        # if code == 200:
+        #     shutil.move(file_name, uploaded_path)
+        #     print("文件 %s 上传成功！" % name)
+        # else:
+        #     print("文件 %s 上传失败,原因：%s" % (name, msg))
+        #     uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
+        #     upload_send_email(uc=uploadfail_content)
+        #     shutil.move(file_name, uploadfail_path)
         #  上传接口暂未定义
     except BaseException as u:
         pass
 
+
 def upload_taxfile():
+    """
+    上传税单二进制文件流
+    """
     try:
         #  文件参数
         save_path = read_yaml()['localfile']['save_path']
@@ -362,6 +394,9 @@ def upload_taxfile():
 
 
 def go_to_download():
+    """
+    税单下载页面，操作下载
+    """
     sleep(2)
     # pyautogui.press('tab', presses=8, interval=0.3)  # 切换到下载
     # sleep(0.5)
@@ -383,6 +418,9 @@ def go_to_download():
 
 # 回调爬取
 def callback(ch, method, properties, body):
+    """
+    根据回调的报关单号，执行抓取任务
+    """
     try:
         # save_path = read_yaml()['localfile']['save_path']
         # file = os.listdir(save_path)
@@ -428,7 +466,7 @@ def callback(ch, method, properties, body):
                 upload_mode = read_yaml()['upload_api']['upload_type']
                 if int(upload_mode) == 1:
                     upload_taxfile()
-                else:
+                elif int(upload_mode) == 2:
                     upload_json()
                 sleep(3)
                 ch.basic_ack(delivery_tag=method.delivery_tag)
