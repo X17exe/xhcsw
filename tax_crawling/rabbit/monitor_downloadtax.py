@@ -60,33 +60,31 @@ def upload_send_email(uc):
     yag.close()
 
 
-try:
-    #  创建脚本抓取文件的本地保存路径
-    file1 = os.path.exists(read_yaml()['localfile']['save_path'])
-    if file1:
-        pass
-    else:
-        os.makedirs(read_yaml()['localfile']['save_path'])
+#  创建脚本抓取文件的本地保存路径
+file1 = os.path.exists(read_yaml()['localfile']['save_path'])
+if file1:
+    pass
+else:
+    os.makedirs(read_yaml()['localfile']['save_path'])
 
-    file2 = os.path.exists(read_yaml()['localfile']['uploaded_path'])
-    if file2:
-        pass
-    else:
-        os.makedirs(read_yaml()['localfile']['uploaded_path'])
+file2 = os.path.exists(read_yaml()['localfile']['uploaded_path'])
+if file2:
+    pass
+else:
+    os.makedirs(read_yaml()['localfile']['uploaded_path'])
 
-    file3 = os.path.exists(read_yaml()['localfile']['uploadfail_path'])
-    if file3:
-        pass
-    else:
-        os.makedirs(read_yaml()['localfile']['uploadfail_path'])
+file3 = os.path.exists(read_yaml()['localfile']['uploadfail_path'])
+if file3:
+    pass
+else:
+    os.makedirs(read_yaml()['localfile']['uploadfail_path'])
 
-    file4 = os.path.exists('C:/chromedebug/')
-    if file4:
-        pass
-    else:
-        os.makedirs('C:/chromedebug/')
-except BaseException as p:
-    except_send_email(ec=p)
+file4 = os.path.exists('C:/chromedebug/')
+if file4:
+    pass
+else:
+    os.makedirs('C:/chromedebug/')
+
 
 #  创建chrome浏览器调试窗口
 cmd = read_yaml()['localfile']['chromedebugwindow']
@@ -179,20 +177,19 @@ def login_taxpage(browser):
 
 
 #  启动脚本时登录到税费界面
-try:
-    option = ChromeOptions()
-    option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
-    option.add_argument('--start-maximized')
-    option.add_argument('--no-sandbox')
-    browser = webdriver.Chrome(options=option)
-    win = browser.window_handles
-    win_number = len(win)
-    if win_number == 1:
-        login_taxpage(browser)
-    else:
-        pass
-except BaseException as s:
-    except_send_email(ec=s)
+
+option = ChromeOptions()
+option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
+option.add_argument('--start-maximized')
+option.add_argument('--no-sandbox')
+browser = webdriver.Chrome(options=option)
+win = browser.window_handles
+win_number = len(win)
+if win_number == 1:
+    login_taxpage(browser)
+else:
+    pass
+
 
 # 连接rabbit
 connection = pika.BlockingConnection(pika.ConnectionParameters(host=read_yaml()['rabbitmq']['host'],
@@ -283,74 +280,71 @@ def analysis_taxfile(file):
     """
     解析抓取的税单，并转为json对象
     """
-    try:
-        allgoods_list = []
-        taxfilenumber = 0
-        with pdfplumber.open(file) as t:
-            for page_content in t.pages:
-                allfile_content = page_content.extract_text().replace('\n', ' ')
+    allgoods_list = []
+    taxfilenumber = 0
+    with pdfplumber.open(file) as t:
+        for page_content in t.pages:
+            allfile_content = page_content.extract_text().replace('\n', ' ')
 
-                #  提取税费信息,转为字典
-                if '税费单详细信息' in allfile_content:
-                    if int(taxfilenumber) == 0:
-                        taxbill_detail_dict1 = taxdetail_regular_extraction(allfile_content)
-                    elif int(taxfilenumber) == 1:
-                        taxbill_detail_dict2 = taxdetail_regular_extraction(allfile_content)
-                    taxfilenumber += 1
+            #  提取税费信息,转为字典
+            if '税费单详细信息' in allfile_content:
+                if int(taxfilenumber) == 0:
+                    taxbill_detail_dict1 = taxdetail_regular_extraction(allfile_content)
+                elif int(taxfilenumber) == 1:
+                    taxbill_detail_dict2 = taxdetail_regular_extraction(allfile_content)
+                taxfilenumber += 1
 
-                #  提取货物信息,转为列表
-                if '税费单货物信息' in allfile_content:
-                    detail = re.findall(r"折算率 税率 税率 (.*?)$", allfile_content)
-                    strdetail = ''.join(detail)
-                    str_detail = strdetail + ' '
-                    listdetail = re.findall(r"(.*?) ", str_detail)
+            #  提取货物信息,转为列表
+            if '税费单货物信息' in allfile_content:
+                detail = re.findall(r"折算率 税率 税率 (.*?)$", allfile_content)
+                strdetail = ''.join(detail)
+                str_detail = strdetail + ' '
+                listdetail = re.findall(r"(.*?) ", str_detail)
 
-                    #  拆分列表，拆分后一个子列表为一行货物明细数据
-                    cd = 10
-                    if len(listdetail) > cd:
-                        for i in range(int(len(listdetail) / cd)):
-                            cut_a = listdetail[cd * i:cd * (i + 1)]
-                            allgoods_list.append(cut_a)
+                #  拆分列表，拆分后一个子列表为一行货物明细数据
+                cd = 10
+                if len(listdetail) > cd:
+                    for i in range(int(len(listdetail) / cd)):
+                        cut_a = listdetail[cd * i:cd * (i + 1)]
+                        allgoods_list.append(cut_a)
 
-                        last_data = listdetail[int(len(listdetail) / cd) * cd:]
-                        if last_data:
-                            allgoods_list.append(last_data)
-                    else:
-                        allgoods_list.append(listdetail)
-        t.close()
-        #  解包拆分后的列表，转为字典后再转json
-        if int(taxfilenumber) == 1:
-            goods_detail_list = []
-            for singe_goods in allgoods_list:
-                singetax_goodsdict = goodsdetail_regular_extraction(*singe_goods)
-                goods_detail_list.append(singetax_goodsdict)
-            taxbill_detail_dict1['税费单货物信息'] = goods_detail_list
-            taxbill_detail_json = json.dumps(taxbill_detail_dict1, ensure_ascii=False)
+                    last_data = listdetail[int(len(listdetail) / cd) * cd:]
+                    if last_data:
+                        allgoods_list.append(last_data)
+                else:
+                    allgoods_list.append(listdetail)
+    t.close()
+    #  解包拆分后的列表，转为字典后再转json
+    if int(taxfilenumber) == 1:
+        goods_detail_list = []
+        for singe_goods in allgoods_list:
+            singetax_goodsdict = goodsdetail_regular_extraction(*singe_goods)
+            goods_detail_list.append(singetax_goodsdict)
+        taxbill_detail_dict1['税费单货物信息'] = goods_detail_list
+        taxbill_detail_json = json.dumps(taxbill_detail_dict1, ensure_ascii=False)
 
-            return str(taxbill_detail_json).replace("'", "")
+        return str(taxbill_detail_json).replace("'", "")
 
-        elif int(taxfilenumber) == 2:
-            goods_detail_list1 = []
-            goods_detail_list2 = []
-            singe_taxfile_goodsdetailnumber = int(len(allgoods_list)) / int(taxfilenumber)
-            goodsdetaillist1 = allgoods_list[:int(singe_taxfile_goodsdetailnumber)]
-            goodsdetaillist2 = allgoods_list[int(singe_taxfile_goodsdetailnumber):]
+    elif int(taxfilenumber) == 2:
+        goods_detail_list1 = []
+        goods_detail_list2 = []
+        singe_taxfile_goodsdetailnumber = int(len(allgoods_list)) / int(taxfilenumber)
+        goodsdetaillist1 = allgoods_list[:int(singe_taxfile_goodsdetailnumber)]
+        goodsdetaillist2 = allgoods_list[int(singe_taxfile_goodsdetailnumber):]
 
-            for singe_goods in goodsdetaillist1:
-                singetax_goodsdict1 = goodsdetail_regular_extraction(*singe_goods)
-                goods_detail_list1.append(singetax_goodsdict1)
-            taxbill_detail_dict1['税费单货物信息'] = goods_detail_list1
-            taxbill_detail_json1 = json.dumps(taxbill_detail_dict1, ensure_ascii=False)
+        for singe_goods in goodsdetaillist1:
+            singetax_goodsdict1 = goodsdetail_regular_extraction(*singe_goods)
+            goods_detail_list1.append(singetax_goodsdict1)
+        taxbill_detail_dict1['税费单货物信息'] = goods_detail_list1
+        taxbill_detail_json1 = json.dumps(taxbill_detail_dict1, ensure_ascii=False)
 
-            for singe_goods in goodsdetaillist2:
-                singetax_goodsdict2 = goodsdetail_regular_extraction(*singe_goods)
-                goods_detail_list2.append(singetax_goodsdict2)
-            taxbill_detail_dict2['税费单货物信息'] = goods_detail_list2
-            taxbill_detail_json2 = json.dumps(taxbill_detail_dict2, ensure_ascii=False)
+        for singe_goods in goodsdetaillist2:
+            singetax_goodsdict2 = goodsdetail_regular_extraction(*singe_goods)
+            goods_detail_list2.append(singetax_goodsdict2)
+        taxbill_detail_dict2['税费单货物信息'] = goods_detail_list2
+        taxbill_detail_json2 = json.dumps(taxbill_detail_dict2, ensure_ascii=False)
 
-            return str([taxbill_detail_json1, taxbill_detail_json2]).replace("'", "")
-    except BaseException as v:
-        except_send_email(ec=v)
+        return str([taxbill_detail_json1, taxbill_detail_json2]).replace("'", "")
 
 
 def upload_json():
@@ -389,68 +383,62 @@ def upload_taxfile():
     """
     上传税单二进制文件流
     """
-    try:
-        #  文件参数
-        save_path = read_yaml()['localfile']['save_path']
-        uploaded_path = read_yaml()['localfile']['uploaded_path']
-        uploadfail_path = read_yaml()['localfile']['uploadfail_path']
-        filelist = os.listdir(save_path)
-        filelist.sort(key=lambda fn: os.path.getmtime(save_path + '\\' + fn))
-        name = ''.join(filelist[-1])
-        file_name = save_path + name
-        #  接口参数
-        url = read_yaml()['upload_api']['tax_api']
-        content = open(file_name, 'rb')
-        files = {'file': (name, content, 'pdf')}
-        data = {'Content-Disposition': 'form-data', 'Content-Type': 'application/pdf'}
-        r = requests.post(url=url, data=data, files=files)
-        content.close()
-        code = int(r.json()['code'])
-        msg = r.json()['msg']
-        if code == 200:
-            shutil.move(file_name, uploaded_path)
-            print("文件 %s 上传成功！" % name)
-        else:
-            print("文件 %s 上传失败,原因：%s" % (name, msg))
-            uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-            upload_send_email(uc=uploadfail_content)
-            shutil.move(file_name, uploadfail_path)
-    except BaseException as q:
-        except_send_email(ec=q)
+    #  文件参数
+    save_path = read_yaml()['localfile']['save_path']
+    uploaded_path = read_yaml()['localfile']['uploaded_path']
+    uploadfail_path = read_yaml()['localfile']['uploadfail_path']
+    filelist = os.listdir(save_path)
+    filelist.sort(key=lambda fn: os.path.getmtime(save_path + '\\' + fn))
+    name = ''.join(filelist[-1])
+    file_name = save_path + name
+    #  接口参数
+    url = read_yaml()['upload_api']['tax_api']
+    content = open(file_name, 'rb')
+    files = {'file': (name, content, 'pdf')}
+    data = {'Content-Disposition': 'form-data', 'Content-Type': 'application/pdf'}
+    r = requests.post(url=url, data=data, files=files)
+    content.close()
+    code = int(r.json()['code'])
+    msg = r.json()['msg']
+    if code == 200:
+        shutil.move(file_name, uploaded_path)
+        print("文件 %s 上传成功！" % name)
+    else:
+        print("文件 %s 上传失败,原因：%s" % (name, msg))
+        uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
+        upload_send_email(uc=uploadfail_content)
+        shutil.move(file_name, uploadfail_path)
 
 
 def upload_goodsfile():
     """
     上传货物单二进制文件流
     """
-    try:
-        #  文件参数
-        goodsfile_save_path = read_yaml()['localfile']['save_path']
-        uploaded_path = read_yaml()['localfile']['uploaded_path']
-        uploadfail_path = read_yaml()['localfile']['uploadfail_path']
-        filelist = os.listdir(goodsfile_save_path)
-        filelist.sort(key=lambda fn: os.path.getmtime(goodsfile_save_path + '\\' + fn))
-        name = ''.join(filelist[-1])
-        goods_file_name = goodsfile_save_path + name
-        #  接口参数
-        url = read_yaml()['upload_api']['goods_api']
-        content = open(goods_file_name, 'rb')
-        files = {'file': (name, content, 'pdf')}
-        data = {'Content-Disposition': 'form-data', 'Content-Type': 'application/pdf'}
-        r = requests.post(url=url, data=data, files=files)
-        content.close()
-        code = int(r.json()['code'])
-        msg = r.json()['msg']
-        if code == 200:
-            shutil.move(goods_file_name, uploaded_path)
-            print("文件 %s 上传成功！" % name)
-        else:
-            print("文件 %s 上传失败,原因：%s" % (name, msg))
-            uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-            upload_send_email(uc=uploadfail_content)
-            shutil.move(goods_file_name, uploadfail_path)
-    except BaseException as w:
-        except_send_email(ec=w)
+    #  文件参数
+    goodsfile_save_path = read_yaml()['localfile']['save_path']
+    uploaded_path = read_yaml()['localfile']['uploaded_path']
+    uploadfail_path = read_yaml()['localfile']['uploadfail_path']
+    filelist = os.listdir(goodsfile_save_path)
+    filelist.sort(key=lambda fn: os.path.getmtime(goodsfile_save_path + '\\' + fn))
+    name = ''.join(filelist[-1])
+    goods_file_name = goodsfile_save_path + name
+    #  接口参数
+    url = read_yaml()['upload_api']['goods_api']
+    content = open(goods_file_name, 'rb')
+    files = {'file': (name, content, 'pdf')}
+    data = {'Content-Disposition': 'form-data', 'Content-Type': 'application/pdf'}
+    r = requests.post(url=url, data=data, files=files)
+    content.close()
+    code = int(r.json()['code'])
+    msg = r.json()['msg']
+    if code == 200:
+        shutil.move(goods_file_name, uploaded_path)
+        print("文件 %s 上传成功！" % name)
+    else:
+        print("文件 %s 上传失败,原因：%s" % (name, msg))
+        uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
+        upload_send_email(uc=uploadfail_content)
+        shutil.move(goods_file_name, uploadfail_path)
 
 
 def go_to_download():

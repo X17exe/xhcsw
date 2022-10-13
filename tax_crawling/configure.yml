@@ -1,8 +1,9 @@
-#单一窗口密码,只支持卡登录
+#单一窗口登录密码（只支持卡登录）
 single_widow:
+    # 操作员卡密码
     password: 88888888
 
-#rabbitmq配置
+#rabbitmq配置(请设置交换机为 直连交换机（Direct Exchange））
 rabbitmq:
     host: '192.168.2.80'
     port: 5672
@@ -45,5 +46,5 @@ email:
     host: 'smtp.mxhichina.com'
     #SMTP服务器端口
     port: 465
-    #收件人邮箱,如有多个，请用英文逗号分隔
+    #收件人邮箱,如有多个，请用英文逗号分隔；示例：['xxx@xx.com','xxx@xx.com','xxx@xx.com']
     receiver: ['2224599145@qq.com']
