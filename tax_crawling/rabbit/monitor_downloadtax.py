@@ -105,6 +105,7 @@ def close_inform(browser):
         pass
 
 
+handle_list = []
 def login_taxpage(browser):
     """
     程序开始执行，进入税费单界面等待rabbitmq返回待抓取信息
@@ -113,6 +114,8 @@ def login_taxpage(browser):
         browser.get('https://sz.singlewindow.cn/dyck/')
         browser.execute_script('() =>{ Object.defineProperties(navigator,{ webdriver:{ get: () => false } }) }')
         close_inform(browser)  # 关闭弹出通知
+        singe_index = browser.current_window_handle
+        handle_list.append(singe_index)
 
         browser.switch_to.frame('loginIframe1')  # 切入frame层
 
@@ -132,18 +135,43 @@ def login_taxpage(browser):
         browser.switch_to.default_content()
         sleep(1)
         close_inform(browser)  # 关闭弹出通知
+
+        #  进入税单界面
         browser.switch_to.frame(browser.find_element_by_xpath('//div[@id="content"]/iframe'))
         taxes_transact = browser.find_element_by_xpath('//li[contains(text(), "税费办理")]')
         taxes_transact.click()
         sleep(6)
         browser.switch_to.window(browser.window_handles[1])
-        should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
-        current_url = browser.current_url
-        if current_url == should_url:
+        sleep(1)
+        tax_index = browser.current_window_handle
+        handle_list.append(tax_index)
+        tax_should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
+        tax_current_url = browser.current_url
+        if tax_current_url == tax_should_url:
             pass
         else:
-            ex_content = "监测到程序运行异常，请检查操作员卡是否插好，并按照使用手册重新运行程序！"
-            except_send_email(ec=ex_content)
+            tax_ex_content = "监测到程序运行异常，请检查操作员卡是否插好，并按照使用手册重新运行程序！"
+            except_send_email(ec=tax_ex_content)
+            sys.exit(0)
+
+        #  进入货物申报界面
+        browser.switch_to.window(browser.window_handles[0])  # 返回单一首页
+        browser.switch_to.frame(browser.find_element_by_xpath('//div[@id="content"]/iframe'))
+        taxes_transact = browser.find_element_by_xpath('//li[contains(text(), "货物申报")]')
+        taxes_transact.click()
+        browser.find_element_by_xpath(
+            '//a[@data-href="http://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001"]').click()
+        sleep(6)
+        browser.switch_to.window(browser.window_handles[-1])
+        goods_index = browser.current_window_handle
+        handle_list.append(goods_index)
+        goods_should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
+        goods_current_url = browser.current_url
+        if goods_current_url == goods_should_url:
+            pass
+        else:
+            goods_ex_content = "监测到程序运行异常，请检查操作员卡是否插好，并按照使用手册重新运行程序！"
+            except_send_email(ec=goods_ex_content)
             sys.exit(0)
 
     except BaseException as o:
@@ -338,23 +366,21 @@ def upload_json():
         name = ''.join(filelist[-1])
         file_name = save_pathj + name
 
-        url = read_yaml()['upload_api']['api']
-        # header = {}
+        url = read_yaml()['upload_api']['tax_jsonapi']
+        header = {}
         json_data = analysis_taxfile(file=file_name)
-        print(json_data)
-        # r = requests.post(url=url, headers=header, json=json_data)
-        #
-        # code = int(r.json()['code'])
-        # msg = r.json()['msg']
-        # if code == 200:
-        #     shutil.move(file_name, uploaded_path)
-        #     print("文件 %s 上传成功！" % name)
-        # else:
-        #     print("文件 %s 上传失败,原因：%s" % (name, msg))
-        #     uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-        #     upload_send_email(uc=uploadfail_content)
-        #     shutil.move(file_name, uploadfail_path)
         #  上传接口暂未定义
+        r = requests.post(url=url, headers=header, json=json_data)
+        code = int(r.json()['code'])
+        msg = r.json()['msg']
+        if code == 200:
+            shutil.move(file_name, uploaded_path)
+            print("文件 %s 上传成功！" % name)
+        else:
+            print("文件 %s 上传失败,原因：%s" % (name, msg))
+            uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
+            upload_send_email(uc=uploadfail_content)
+            shutil.move(file_name, uploadfail_path)
     except BaseException as u:
         pass
 
@@ -373,7 +399,7 @@ def upload_taxfile():
         name = ''.join(filelist[-1])
         file_name = save_path + name
         #  接口参数
-        url = read_yaml()['upload_api']['api']
+        url = read_yaml()['upload_api']['tax_api']
         content = open(file_name, 'rb')
         files = {'file': (name, content, 'pdf')}
         data = {'Content-Disposition': 'form-data', 'Content-Type': 'application/pdf'}
@@ -391,6 +417,40 @@ def upload_taxfile():
             shutil.move(file_name, uploadfail_path)
     except BaseException as q:
         except_send_email(ec=q)
+
+
+def upload_goodsfile():
+    """
+    上传货物单二进制文件流
+    """
+    try:
+        #  文件参数
+        goodsfile_save_path = read_yaml()['localfile']['save_path']
+        uploaded_path = read_yaml()['localfile']['uploaded_path']
+        uploadfail_path = read_yaml()['localfile']['uploadfail_path']
+        filelist = os.listdir(goodsfile_save_path)
+        filelist.sort(key=lambda fn: os.path.getmtime(goodsfile_save_path + '\\' + fn))
+        name = ''.join(filelist[-1])
+        goods_file_name = goodsfile_save_path + name
+        #  接口参数
+        url = read_yaml()['upload_api']['goods_api']
+        content = open(goods_file_name, 'rb')
+        files = {'file': (name, content, 'pdf')}
+        data = {'Content-Disposition': 'form-data', 'Content-Type': 'application/pdf'}
+        r = requests.post(url=url, data=data, files=files)
+        content.close()
+        code = int(r.json()['code'])
+        msg = r.json()['msg']
+        if code == 200:
+            shutil.move(goods_file_name, uploaded_path)
+            print("文件 %s 上传成功！" % name)
+        else:
+            print("文件 %s 上传失败,原因：%s" % (name, msg))
+            uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
+            upload_send_email(uc=uploadfail_content)
+            shutil.move(goods_file_name, uploadfail_path)
+    except BaseException as w:
+        except_send_email(ec=w)
 
 
 def go_to_download():
@@ -422,62 +482,164 @@ def callback(ch, method, properties, body):
     根据回调的报关单号，执行抓取任务
     """
     try:
-        # save_path = read_yaml()['localfile']['save_path']
-        # file = os.listdir(save_path)
-        # file_num = int(len(file))
-        # if file_num > 0:
-        #     shutil.rmtree(save_path)
-        #     sleep(1)
-        #     os.makedirs(save_path)
-        taxno = int(body.decode())
+        tax_no = int(body.decode())
         sleep(rand_sleep())
-        option = ChromeOptions()
-        option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
-        option.add_argument('--start-maximized')
-        option.add_argument('--no-sandbox')
-        browser = webdriver.Chrome(options=option)
-        if taxno != 123456789:
-            browser.switch_to.window(browser.window_handles[0])  # 切换到税费window
-            browser.refresh()
-            sleep(3)
-            browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
-            sleep(1)
-            browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-            browser.switch_to.default_content()  # 切回默认层
-            browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-            sleep(0.5)
-            browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-            sleep(3)
-            browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
-            sleep(0.5)
-            browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-            browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(taxno)
-            browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-            sleep(2)
-            browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-            browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-            sleep(2)
-            window = browser.window_handles
-            window_number = len(window)
-            if window_number == 3:
+        option1 = ChromeOptions()
+        option1.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
+        option1.add_argument('--start-maximized')
+        option1.add_argument('--no-sandbox')
+        browser = webdriver.Chrome(options=option1)
+        if tax_no != 123456789:
+            grab_mode = read_yaml()['grab_mode']['mode']
+            if int(grab_mode) == 1:
+                #  货物单抓取
+                browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                browser.refresh()
+                sleep(3)
+                browser.find_element_by_xpath('//span[text()="查询统计"]').click()
+                sleep(1)
+                browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                sleep(1)
+                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
+                browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                sleep(0.3)
+                browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                sleep(0.3)
+                browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                sleep(4)
+                browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                sleep(1)
+                browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                sleep(0.5)
+                browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                sleep(2)
                 go_to_download()
                 sleep(10)
-                #  可通过修改配置文件切换上传模式：二进制文件流 或 json对象
-                upload_mode = read_yaml()['upload_api']['upload_type']
-                if int(upload_mode) == 1:
-                    upload_taxfile()
-                elif int(upload_mode) == 2:
-                    upload_json()
+                upload_goodsfile()
+                sleep(3)
+
+                #  税单抓取
+                browser.switch_to.window(handle_list[1])  # 切换到税费window
+                browser.refresh()
+                sleep(3)
+                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+                sleep(1)
+                browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                browser.switch_to.default_content()  # 切回默认层
+                browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                sleep(0.5)
+                browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                sleep(3)
+                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
+                sleep(0.5)
+                browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                sleep(2)
+                browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                sleep(2)
+                window = browser.window_handles
+                window_number = len(window)
+                if window_number == 4:
+                    go_to_download()
+                    sleep(10)
+                    #  可通过修改配置文件切换上传模式：二进制文件流 或 json对象
+                    upload_mode = read_yaml()['upload_api']['upload_type']
+                    if int(upload_mode) == 1:
+                        upload_taxfile()
+                    elif int(upload_mode) == 2:
+                        upload_json()
+                    sleep(3)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+                else:
+                    browser.refresh()
+                    except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                    upload_send_email(uc=except_content)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+            elif int(grab_mode) == 2:
+                browser.switch_to.window(handle_list[1])  # 切换到税费window
+                browser.refresh()
+                sleep(3)
+                browser.switch_to.frame(
+                    browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+                sleep(1)
+                browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                browser.switch_to.default_content()  # 切回默认层
+                browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                sleep(0.5)
+                browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                sleep(3)
+                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
+                sleep(0.5)
+                browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                sleep(2)
+                browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                sleep(2)
+                window = browser.window_handles
+                window_number = len(window)
+                if window_number == 4:
+                    go_to_download()
+                    sleep(10)
+                    #  可通过修改配置文件切换上传模式：二进制文件流 或 json对象
+                    upload_mode = read_yaml()['upload_api']['upload_type']
+                    if int(upload_mode) == 1:
+                        upload_taxfile()
+                    elif int(upload_mode) == 2:
+                        upload_json()
+                    sleep(3)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+                else:
+                    browser.refresh()
+                    except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                    upload_send_email(uc=except_content)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+            elif int(grab_mode) == 3:
+                #  货物单抓取
+                browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                browser.refresh()
+                sleep(3)
+                browser.find_element_by_xpath('//span[text()="查询统计"]').click()
+                sleep(1)
+                browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                sleep(1)
+                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
+                sleep(0.3)
+                browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                sleep(0.3)
+                browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                sleep(0.3)
+                browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                sleep(4)
+                browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                sleep(1)
+                browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                sleep(0.3)
+                browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                sleep(2)
+                go_to_download()
+                sleep(10)
+                upload_goodsfile()
                 sleep(3)
                 ch.basic_ack(delivery_tag=method.delivery_tag)
-            else:
-                browser.refresh()
-                except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % taxno
-                upload_send_email(uc=except_content)
-                ch.basic_ack(delivery_tag=method.delivery_tag)
+
         else:
-            browser.switch_to.window(browser.window_handles[0])  # 切换到税费window
+            browser.switch_to.window(handle_list[0])
             browser.refresh()
+            sleep(3)
+            browser.switch_to.window(handle_list[1])
+            browser.refresh()
+            sleep(3)
+            browser.switch_to.window(handle_list[2])
+            browser.refresh()
+            sleep(3)
             ch.basic_ack(delivery_tag=method.delivery_tag)
     except BaseException as r:
         except_send_email(ec=r)

@@ -12,10 +12,19 @@ rabbitmq:
 
 #税费文件上传接口配置
 upload_api:
-    # 数据源上传接口
-    api: 'http://192.168.2.120:8010/import/operationCustomsBillReportInfo/declare/uploadTaxMultipart'
-    # 上传类型，1：二进制文件流； 2：文件解析后的json对象 （默认为1）
-    upload_type: 1
+    # 税费二进制文件流数据上传接口
+    tax_api: 'http://192.168.2.120:8010/import/operationCustomsBillReportInfo/declare/uploadTaxMultipart'
+    # 税费json对象上传接口：
+    tax_jsonapi: ''
+    # 货物二进制文件流数据上传接口
+    goods_api: ''
+    # 税费文件上传类型，1：二进制文件流； 2：文件解析后的json对象 （默认为1）
+    upload_type: 2
+
+# 抓取模式
+grab_mode:
+    # 抓取模式: 1:税单和货单都抓取； 2：只抓取税单； 3：只抓取货单 （默认为1）
+    mode: 1
 
 #本地文件配置
 localfile:
