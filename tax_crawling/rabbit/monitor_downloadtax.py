@@ -176,8 +176,7 @@ def login_taxpage(browser):
         except_send_email(ec=o)
 
 
-#  启动脚本时登录到税费界面
-
+#  启动脚本时登录到税费和货物界面
 option = ChromeOptions()
 option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
 option.add_argument('--start-maximized')
@@ -446,10 +445,6 @@ def go_to_download():
     税单下载页面，操作下载
     """
     sleep(2)
-    # pyautogui.press('tab', presses=8, interval=0.3)  # 切换到下载
-    # sleep(0.5)
-    # pyautogui.press('enter')  # 点击下载
-    # sleep(1)
     pyautogui.hotkey('ctrl', 's')  # 保存
     sleep(0.5)
     pyautogui.press('left')
@@ -639,8 +634,7 @@ channel.basic_consume(queue=read_yaml()['rabbitmq']['queue'],
                       on_message_callback=callback)
 print('正在等待信息，如果想退出，请直接关闭浏览器和程序窗口')
 
-# 启动监听
-channel.start_consuming()
 
 if __name__ == "__main__":
-    callback()
+    # 启动监听
+    channel.start_consuming()
