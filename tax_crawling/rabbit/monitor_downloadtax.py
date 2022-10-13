@@ -89,6 +89,8 @@ else:
 #  创建chrome浏览器调试窗口
 cmd = read_yaml()['localfile']['chromedebugwindow']
 win32api.ShellExecute(0, 'open', cmd, '', '', 1)
+sleep(1)
+pyautogui.hotkey('alt', ' ', 'x')  # 最大化浏览器窗口
 
 
 def close_inform(browser):
