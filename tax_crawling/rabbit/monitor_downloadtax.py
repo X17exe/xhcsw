@@ -346,36 +346,33 @@ def analysis_taxfile(file):
         return str([taxbill_detail_json1, taxbill_detail_json2]).replace("'", "")
 
 
-def upload_json():
+def upload_taxjson():
     """
     上传税单json对象
     """
-    try:
-        save_pathj = read_yaml()['localfile']['save_path']
-        uploaded_path = read_yaml()['localfile']['uploaded_path']
-        uploadfail_path = read_yaml()['localfile']['uploadfail_path']
-        filelist = os.listdir(save_pathj)
-        filelist.sort(key=lambda fn: os.path.getmtime(save_pathj + '\\' + fn))
-        name = ''.join(filelist[-1])
-        file_name = save_pathj + name
+    save_pathj = read_yaml()['localfile']['save_path']
+    uploaded_path = read_yaml()['localfile']['uploaded_path']
+    uploadfail_path = read_yaml()['localfile']['uploadfail_path']
+    filelist = os.listdir(save_pathj)
+    filelist.sort(key=lambda fn: os.path.getmtime(save_pathj + '\\' + fn))
+    name = ''.join(filelist[-1])
+    file_name = save_pathj + name
 
-        url = read_yaml()['upload_api']['tax_jsonapi']
-        header = {}
-        json_data = analysis_taxfile(file=file_name)
-        #  上传接口暂未定义
-        r = requests.post(url=url, headers=header, json=json_data)
-        code = int(r.json()['code'])
-        msg = r.json()['msg']
-        if code == 200:
-            shutil.move(file_name, uploaded_path)
-            print("文件 %s 上传成功！" % name)
-        else:
-            print("文件 %s 上传失败,原因：%s" % (name, msg))
-            uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-            upload_send_email(uc=uploadfail_content)
-            shutil.move(file_name, uploadfail_path)
-    except BaseException as u:
-        pass
+    url = read_yaml()['upload_api']['tax_jsonapi']
+    header = {}
+    json_data = analysis_taxfile(file=file_name)
+    #  上传接口暂未定义
+    r = requests.post(url=url, headers=header, json=json_data)
+    code = int(r.json()['code'])
+    msg = r.json()['msg']
+    if code == 200:
+        shutil.move(file_name, uploaded_path)
+        print("文件 %s 上传成功！" % name)
+    else:
+        print("文件 %s 上传失败,原因：%s" % (name, msg))
+        uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
+        upload_send_email(uc=uploadfail_content)
+        shutil.move(file_name, uploadfail_path)
 
 
 def upload_taxfile():
@@ -532,7 +529,7 @@ def callback(ch, method, properties, body):
                     if int(upload_mode) == 1:
                         upload_taxfile()
                     elif int(upload_mode) == 2:
-                        upload_json()
+                        upload_taxjson()
                     sleep(3)
                     ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -574,7 +571,7 @@ def callback(ch, method, properties, body):
                     if int(upload_mode) == 1:
                         upload_taxfile()
                     elif int(upload_mode) == 2:
-                        upload_json()
+                        upload_taxjson()
                     sleep(3)
                     ch.basic_ack(delivery_tag=method.delivery_tag)
 
