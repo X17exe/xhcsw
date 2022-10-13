@@ -361,7 +361,7 @@ def upload_taxjson():
     file_name = save_pathj + name
 
     url = read_yaml()['upload_api']['tax_jsonapi']
-    header = {}
+    header = read_yaml()['upload_api']['tax_json_header']
     json_data = analysis_taxfile(file=file_name)
     #  上传接口暂未定义
     r = requests.post(url=url, headers=header, json=json_data)
