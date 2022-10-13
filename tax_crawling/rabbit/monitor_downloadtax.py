@@ -23,7 +23,7 @@ def read_yaml():
     """
     try:
         with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
-        # with open('C:/Users/admin/Desktop/tax_crawling/configure.yml', encoding="utf-8") as y:
+        # with open('C:/dist/monitor_downloadtax/configure.yml', encoding="utf-8") as y:
             yaml_data = yaml.safe_load(y)
         return yaml_data
     except BaseException as t:

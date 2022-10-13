@@ -15,6 +15,7 @@ rabbitmq:
 upload_api:
     # 税费二进制文件流数据上传接口
     tax_api: 'http://192.168.2.120:8010/import/operationCustomsBillReportInfo/declare/uploadTaxMultipart'
+    tax_header:
     # 税费json对象上传接口：
     tax_jsonapi: ''
     # 货物二进制文件流数据上传接口
