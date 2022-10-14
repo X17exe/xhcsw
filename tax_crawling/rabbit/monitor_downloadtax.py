@@ -91,6 +91,7 @@ cmd = read_yaml()['localfile']['chromedebugwindow']
 win32api.ShellExecute(0, 'open', cmd, '', '', 1)
 sleep(1)
 pyautogui.hotkey('alt', ' ', 'x')  # 最大化浏览器窗口
+pyautogui.hotkey('esc')
 
 
 def close_inform(browser):
@@ -140,7 +141,7 @@ def login_taxpage(browser):
         browser.switch_to.frame(browser.find_element_by_xpath('//div[@id="content"]/iframe'))
         taxes_transact = browser.find_element_by_xpath('//li[contains(text(), "税费办理")]')
         taxes_transact.click()
-        sleep(6)
+        sleep(5)
         browser.switch_to.window(browser.window_handles[1])
         sleep(1)
         tax_index = browser.current_window_handle
@@ -156,13 +157,15 @@ def login_taxpage(browser):
 
         #  进入货物申报界面
         browser.switch_to.window(browser.window_handles[0])  # 返回单一首页
+        sleep(0.5)
         browser.switch_to.frame(browser.find_element_by_xpath('//div[@id="content"]/iframe'))
         taxes_transact = browser.find_element_by_xpath('//li[contains(text(), "货物申报")]')
         taxes_transact.click()
         browser.find_element_by_xpath(
             '//a[@data-href="http://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001"]').click()
-        sleep(6)
+        sleep(5)
         browser.switch_to.window(browser.window_handles[-1])
+        sleep(1)
         goods_index = browser.current_window_handle
         handle_list.append(goods_index)
         goods_should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
@@ -181,7 +184,6 @@ def login_taxpage(browser):
 #  启动脚本时登录到税费和货物界面
 option = ChromeOptions()
 option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
-option.add_argument('--start-maximized')
 option.add_argument('--no-sandbox')
 browser = webdriver.Chrome(options=option)
 win = browser.window_handles
@@ -326,10 +328,13 @@ def analysis_taxfile(file):
 
         return str(taxbill_detail_json).replace("'", "")
 
+    #  taxfilenumber = 2时，证明报关单下有两个文件（增值税和关税）
     elif int(taxfilenumber) == 2:
         goods_detail_list1 = []
         goods_detail_list2 = []
+        #  等分增值税、关税货物明细
         singe_taxfile_goodsdetailnumber = int(len(allgoods_list)) / int(taxfilenumber)
+        #  列表切片
         goodsdetaillist1 = allgoods_list[:int(singe_taxfile_goodsdetailnumber)]
         goodsdetaillist2 = allgoods_list[int(singe_taxfile_goodsdetailnumber):]
 
@@ -468,7 +473,6 @@ def callback(ch, method, properties, body):
         sleep(rand_sleep())
         option1 = ChromeOptions()
         option1.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
-        option1.add_argument('--start-maximized')
         option1.add_argument('--no-sandbox')
         browser = webdriver.Chrome(options=option1)
         if tax_no != 123456789:
@@ -481,7 +485,7 @@ def callback(ch, method, properties, body):
                 browser.find_element_by_xpath('//span[text()="查询统计"]').click()
                 sleep(1)
                 browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-                sleep(1)
+                sleep(3)
                 browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
                 browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
                 sleep(0.3)
@@ -591,7 +595,7 @@ def callback(ch, method, properties, body):
                 browser.find_element_by_xpath('//span[text()="查询统计"]').click()
                 sleep(1)
                 browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-                sleep(1)
+                sleep(3)
                 browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
                 sleep(0.3)
                 browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
