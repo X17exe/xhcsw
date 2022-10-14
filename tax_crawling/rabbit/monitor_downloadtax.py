@@ -622,10 +622,9 @@ def callback(ch, method, properties, body):
             sleep(3)
             browser.switch_to.window(handle_list[1])
             browser.refresh()
-            sleep(3)
+            sleep(1)
             browser.switch_to.window(handle_list[2])
             browser.refresh()
-            sleep(3)
             ch.basic_ack(delivery_tag=method.delivery_tag)
     except BaseException as r:
         except_send_email(ec=r)
