@@ -60,38 +60,52 @@ def upload_send_email(uc):
     yag.close()
 
 
-#  创建脚本抓取文件的本地保存路径
-file1 = os.path.exists(read_yaml()['localfile']['save_path'])
-if file1:
-    pass
-else:
-    os.makedirs(read_yaml()['localfile']['save_path'])
+def create_files():
+    #  创建脚本抓取文件的本地保存路径
+    file1 = os.path.exists(read_yaml()['localfile']['save_path'])
+    if file1:
+        pass
+    else:
+        os.makedirs(read_yaml()['localfile']['save_path'])
 
-file2 = os.path.exists(read_yaml()['localfile']['uploaded_path'])
-if file2:
-    pass
-else:
-    os.makedirs(read_yaml()['localfile']['uploaded_path'])
+    file2 = os.path.exists(read_yaml()['localfile']['uploaded_path'])
+    if file2:
+        pass
+    else:
+        os.makedirs(read_yaml()['localfile']['uploaded_path'])
 
-file3 = os.path.exists(read_yaml()['localfile']['uploadfail_path'])
-if file3:
-    pass
-else:
-    os.makedirs(read_yaml()['localfile']['uploadfail_path'])
+    file3 = os.path.exists(read_yaml()['localfile']['uploadfail_path'])
+    if file3:
+        pass
+    else:
+        os.makedirs(read_yaml()['localfile']['uploadfail_path'])
 
-file4 = os.path.exists('C:/chromedebug/')
-if file4:
-    pass
-else:
-    os.makedirs('C:/chromedebug/')
+    file4 = os.path.exists('C:/chromedebug/')
+    if file4:
+        pass
+    else:
+        os.makedirs('C:/chromedebug/')
 
 
-#  创建chrome浏览器调试窗口
-cmd = read_yaml()['localfile']['chromedebugwindow']
-win32api.ShellExecute(0, 'open', cmd, '', '', 1)
-sleep(1)
-pyautogui.hotkey('alt', ' ', 'x')  # 最大化浏览器窗口
-pyautogui.hotkey('esc')
+def create_debugwindow():
+    #  创建chrome浏览器调试窗口
+    cmd = read_yaml()['localfile']['chromedebugwindow']
+    win32api.ShellExecute(0, 'open', cmd, '', '', 1)
+    sleep(1)
+    pyautogui.hotkey('alt', ' ', 'x')  # 最大化浏览器窗口
+    pyautogui.hotkey('esc')
+    sleep(3)
+
+    option = ChromeOptions()
+    option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
+    option.add_argument('--no-sandbox')
+    browser = webdriver.Chrome(options=option)
+    win = browser.window_handles
+    win_number = len(win)
+    if win_number == 1:
+        login_taxpage(browser)
+    else:
+        pass
 
 
 def close_inform(browser):
@@ -179,19 +193,6 @@ def login_taxpage(browser):
 
     except BaseException as o:
         except_send_email(ec=o)
-
-
-#  启动脚本时登录到税费和货物界面
-option = ChromeOptions()
-option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
-option.add_argument('--no-sandbox')
-browser = webdriver.Chrome(options=option)
-win = browser.window_handles
-win_number = len(win)
-if win_number == 1:
-    login_taxpage(browser)
-else:
-    pass
 
 
 # 连接rabbit
@@ -637,6 +638,9 @@ channel.basic_consume(queue=read_yaml()['rabbitmq']['queue'],
 print('正在等待信息，如果想退出，请直接关闭浏览器和程序窗口')
 
 
-if __name__ == "__main__":
-    # 启动监听
-    channel.start_consuming()
+
+# if __name__ == "__main__":
+#     # 启动
+#     create_files()
+#     create_debugwindow()
+#     channel.start_consuming()
