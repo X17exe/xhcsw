@@ -638,7 +638,6 @@ channel.basic_consume(queue=read_yaml()['rabbitmq']['queue'],
 print('正在等待信息，如果想退出，请直接关闭浏览器和程序窗口')
 
 
-
 # if __name__ == "__main__":
 #     # 启动
 #     create_files()
