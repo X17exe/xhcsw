@@ -1,0 +1,3 @@
+1、切到项目目录下，运行： python setup.py build_ext --inplace
+2、将生成的  .pyd  文件名修改为  monitor_downloadtax.pyd
+3、再运行命令： pyinstaller -D -c run.py，生成的dist目录即可单独使用
