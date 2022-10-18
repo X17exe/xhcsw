@@ -464,6 +464,56 @@ def go_to_download():
     sleep(1)
 
 
+def grab_goods(browser, tax_no):
+    browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+    browser.refresh()
+    sleep(3)
+    browser.find_element_by_xpath('//span[text()="查询统计"]').click()
+    sleep(1)
+    browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+    sleep(3)
+    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
+    browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+    sleep(0.3)
+    browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+    sleep(0.3)
+    browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+    sleep(4)
+    browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+    sleep(1)
+    browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+    sleep(0.5)
+    browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+    sleep(2)
+    go_to_download()
+    sleep(10)
+    upload_goodsfile()
+    sleep(3)
+
+
+def grab_taxe(browser, tax_no):
+    browser.switch_to.window(handle_list[1])  # 切换到税费window
+    browser.refresh()
+    sleep(3)
+    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+    sleep(1)
+    browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+    browser.switch_to.default_content()  # 切回默认层
+    browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+    sleep(0.5)
+    browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+    sleep(3)
+    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
+    sleep(0.5)
+    browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+    browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+    browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+    sleep(2)
+    browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+    browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+    sleep(2)
+
+
 # 回调爬取
 def callback(ch, method, properties, body):
     """
@@ -480,52 +530,54 @@ def callback(ch, method, properties, body):
             grab_mode = read_yaml()['grab_mode']['mode']
             if int(grab_mode) == 1:
                 #  货物单抓取
-                browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
-                browser.refresh()
-                sleep(3)
-                browser.find_element_by_xpath('//span[text()="查询统计"]').click()
-                sleep(1)
-                browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-                sleep(3)
-                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
-                browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
-                sleep(0.3)
-                browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
-                sleep(0.3)
-                browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                sleep(4)
-                browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                sleep(1)
-                browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
-                sleep(0.5)
-                browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
-                sleep(2)
-                go_to_download()
-                sleep(10)
-                upload_goodsfile()
-                sleep(3)
+                # browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                # browser.refresh()
+                # sleep(3)
+                # browser.find_element_by_xpath('//span[text()="查询统计"]').click()
+                # sleep(1)
+                # browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                # sleep(3)
+                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
+                # browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                # sleep(0.3)
+                # browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                # sleep(0.3)
+                # browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                # sleep(4)
+                # browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                # sleep(1)
+                # browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                # sleep(0.5)
+                # browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                # sleep(2)
+                # go_to_download()
+                # sleep(10)
+                # upload_goodsfile()
+                # sleep(3)
+                grab_goods(browser, tax_no)
 
                 #  税单抓取
-                browser.switch_to.window(handle_list[1])  # 切换到税费window
-                browser.refresh()
-                sleep(3)
-                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
-                sleep(1)
-                browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-                browser.switch_to.default_content()  # 切回默认层
-                browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-                sleep(0.5)
-                browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-                sleep(3)
-                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
-                sleep(0.5)
-                browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-                browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
-                browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                sleep(2)
-                browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-                browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-                sleep(2)
+                # browser.switch_to.window(handle_list[1])  # 切换到税费window
+                # browser.refresh()
+                # sleep(3)
+                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+                # sleep(1)
+                # browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                # browser.switch_to.default_content()  # 切回默认层
+                # browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                # sleep(0.5)
+                # browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                # sleep(3)
+                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
+                # sleep(0.5)
+                # browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                # browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                # browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                # sleep(2)
+                # browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                # browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                # sleep(2)
+                grab_taxe(browser, tax_no)
                 window = browser.window_handles
                 window_number = len(window)
                 if window_number == 4:
@@ -547,27 +599,28 @@ def callback(ch, method, properties, body):
                     ch.basic_ack(delivery_tag=method.delivery_tag)
 
             elif int(grab_mode) == 2:
-                browser.switch_to.window(handle_list[1])  # 切换到税费window
-                browser.refresh()
-                sleep(3)
-                browser.switch_to.frame(
-                    browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
-                sleep(1)
-                browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-                browser.switch_to.default_content()  # 切回默认层
-                browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-                sleep(0.5)
-                browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-                sleep(3)
-                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
-                sleep(0.5)
-                browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-                browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
-                browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                sleep(2)
-                browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-                browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-                sleep(2)
+                # browser.switch_to.window(handle_list[1])  # 切换到税费window
+                # browser.refresh()
+                # sleep(3)
+                # browser.switch_to.frame(
+                #     browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+                # sleep(1)
+                # browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                # browser.switch_to.default_content()  # 切回默认层
+                # browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                # sleep(0.5)
+                # browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                # sleep(3)
+                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
+                # sleep(0.5)
+                # browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                # browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                # browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                # sleep(2)
+                # browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                # browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                # sleep(2)
+                grab_taxe(browser, tax_no)
                 window = browser.window_handles
                 window_number = len(window)
                 if window_number == 4:
@@ -590,31 +643,32 @@ def callback(ch, method, properties, body):
 
             elif int(grab_mode) == 3:
                 #  货物单抓取
-                browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
-                browser.refresh()
-                sleep(3)
-                browser.find_element_by_xpath('//span[text()="查询统计"]').click()
-                sleep(1)
-                browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-                sleep(3)
-                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
-                sleep(0.3)
-                browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
-                sleep(0.3)
-                browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
-                sleep(0.3)
-                browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                sleep(4)
-                browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                sleep(1)
-                browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
-                sleep(0.3)
-                browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
-                sleep(2)
-                go_to_download()
-                sleep(10)
-                upload_goodsfile()
-                sleep(3)
+                # browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                # browser.refresh()
+                # sleep(3)
+                # browser.find_element_by_xpath('//span[text()="查询统计"]').click()
+                # sleep(1)
+                # browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                # sleep(3)
+                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
+                # sleep(0.3)
+                # browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                # sleep(0.3)
+                # browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                # sleep(0.3)
+                # browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                # sleep(4)
+                # browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                # sleep(1)
+                # browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                # sleep(0.3)
+                # browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                # sleep(2)
+                # go_to_download()
+                # sleep(10)
+                # upload_goodsfile()
+                # sleep(3)
+                grab_goods(browser, tax_no)
                 ch.basic_ack(delivery_tag=method.delivery_tag)
 
         else:
