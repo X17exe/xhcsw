@@ -93,7 +93,7 @@ def create_debugwindow():
     win32api.ShellExecute(0, 'open', cmd, '', '', 1)
     sleep(1)
     pyautogui.hotkey('alt', ' ', 'x')  # 最大化浏览器窗口
-    pyautogui.hotkey('esc')
+    pyautogui.press('esc')
     sleep(3)
 
     option = ChromeOptions()
@@ -121,16 +121,20 @@ def close_inform(browser):
 
 
 handle_list = []
+relogin_handle_list = []
 def login_taxpage(browser):
     """
     程序开始执行，进入税费单界面等待rabbitmq返回待抓取信息
     """
     try:
+        handle_list.clear()
+        relogin_handle_list.clear()
         browser.get('https://sz.singlewindow.cn/dyck/')
         browser.execute_script('() =>{ Object.defineProperties(navigator,{ webdriver:{ get: () => false } }) }')
         close_inform(browser)  # 关闭弹出通知
         singe_index = browser.current_window_handle
         handle_list.append(singe_index)
+        relogin_handle_list.append(singe_index)
 
         browser.switch_to.frame('loginIframe1')  # 切入frame层
 
@@ -160,6 +164,7 @@ def login_taxpage(browser):
         sleep(1)
         tax_index = browser.current_window_handle
         handle_list.append(tax_index)
+        relogin_handle_list.append(tax_index)
         tax_should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
         tax_current_url = browser.current_url
         if tax_current_url == tax_should_url:
@@ -182,6 +187,7 @@ def login_taxpage(browser):
         sleep(1)
         goods_index = browser.current_window_handle
         handle_list.append(goods_index)
+        relogin_handle_list.append(goods_index)
         goods_should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
         goods_current_url = browser.current_url
         if goods_current_url == goods_should_url:
@@ -191,6 +197,7 @@ def login_taxpage(browser):
             except_send_email(ec=goods_ex_content)
             sys.exit(0)
 
+        browser.service.stop()
     except BaseException as o:
         except_send_email(ec=o)
 
@@ -204,9 +211,6 @@ channel = connection.channel()
 channel.exchange_declare(exchange=read_yaml()['rabbitmq']['exchange'], exchange_type='direct', durable=False)
 
 channel.queue_declare(queue=read_yaml()['rabbitmq']['queue'])
-
-queue_num = int(channel.queue_declare(queue=read_yaml()['rabbitmq']['queue']).method.message_count)
-# print(queue_num)
 
 # 队列绑定交换机
 channel.queue_bind(exchange=read_yaml()['rabbitmq']['exchange'], queue=read_yaml()['rabbitmq']['queue'],
@@ -318,6 +322,7 @@ def analysis_taxfile(file):
                 else:
                     allgoods_list.append(listdetail)
     t.close()
+
     #  解包拆分后的列表，转为字典后再转json
     if int(taxfilenumber) == 1:
         goods_detail_list = []
@@ -464,56 +469,6 @@ def go_to_download():
     sleep(1)
 
 
-def grab_goods(browser, tax_no):
-    browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
-    browser.refresh()
-    sleep(3)
-    browser.find_element_by_xpath('//span[text()="查询统计"]').click()
-    sleep(1)
-    browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-    sleep(3)
-    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
-    browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
-    sleep(0.3)
-    browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
-    sleep(0.3)
-    browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-    sleep(4)
-    browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-    sleep(1)
-    browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
-    sleep(0.5)
-    browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
-    sleep(2)
-    go_to_download()
-    sleep(10)
-    upload_goodsfile()
-    sleep(3)
-
-
-def grab_taxe(browser, tax_no):
-    browser.switch_to.window(handle_list[1])  # 切换到税费window
-    browser.refresh()
-    sleep(3)
-    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
-    sleep(1)
-    browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-    browser.switch_to.default_content()  # 切回默认层
-    browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-    sleep(0.5)
-    browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-    sleep(3)
-    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
-    sleep(0.5)
-    browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-    browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
-    browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-    sleep(2)
-    browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-    browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-    sleep(2)
-
-
 # 回调爬取
 def callback(ch, method, properties, body):
     """
@@ -530,146 +485,170 @@ def callback(ch, method, properties, body):
             grab_mode = read_yaml()['grab_mode']['mode']
             if int(grab_mode) == 1:
                 #  货物单抓取
-                # browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
-                # browser.refresh()
-                # sleep(3)
-                # browser.find_element_by_xpath('//span[text()="查询统计"]').click()
-                # sleep(1)
-                # browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-                # sleep(3)
-                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
-                # browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
-                # sleep(0.3)
-                # browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
-                # sleep(0.3)
-                # browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                # sleep(4)
-                # browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                # sleep(1)
-                # browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
-                # sleep(0.5)
-                # browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
-                # sleep(2)
-                # go_to_download()
-                # sleep(10)
-                # upload_goodsfile()
-                # sleep(3)
-                grab_goods(browser, tax_no)
-
-                #  税单抓取
-                # browser.switch_to.window(handle_list[1])  # 切换到税费window
-                # browser.refresh()
-                # sleep(3)
-                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
-                # sleep(1)
-                # browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-                # browser.switch_to.default_content()  # 切回默认层
-                # browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-                # sleep(0.5)
-                # browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-                # sleep(3)
-                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
-                # sleep(0.5)
-                # browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-                # browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
-                # browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                # sleep(2)
-                # browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-                # browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-                # sleep(2)
-                grab_taxe(browser, tax_no)
-                window = browser.window_handles
-                window_number = len(window)
-                if window_number == 4:
+                browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                browser.refresh()
+                sleep(3)
+                # 判断cookie是否失效，失效则重新登录
+                goods_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
+                goods_nowurl = browser.current_url
+                if goods_nowurl != goods_url:
+                    pyautogui.hotkey('alt', 'F4')
+                    browser.service.stop()
+                    create_debugwindow()
+                    sleep(2)
+                elif goods_nowurl == goods_url:
+                    browser.find_element_by_xpath('//span[text()="查询统计"]').click()
+                    sleep(1)
+                    browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                    sleep(3)
+                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
+                    browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                    sleep(0.3)
+                    browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                    sleep(0.3)
+                    browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                    sleep(4)
+                    browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                    sleep(1)
+                    browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                    sleep(0.5)
+                    browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                    sleep(2)
                     go_to_download()
                     sleep(10)
-                    #  可通过修改配置文件切换上传模式：二进制文件流 或 json对象
-                    upload_mode = read_yaml()['upload_api']['upload_type']
-                    if int(upload_mode) == 1:
-                        upload_taxfile()
-                    elif int(upload_mode) == 2:
-                        upload_taxjson()
+                    upload_goodsfile()
                     sleep(3)
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
 
-                else:
+                    #  税单抓取
+                    browser.switch_to.window(handle_list[1])  # 切换到税费window
                     browser.refresh()
-                    except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
-                    upload_send_email(uc=except_content)
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                    sleep(3)
+                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+                    sleep(1)
+                    browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                    browser.switch_to.default_content()  # 切回默认层
+                    browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                    sleep(0.5)
+                    browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                    sleep(3)
+                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
+                    sleep(0.5)
+                    browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                    browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                    browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                    sleep(2)
+                    browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                    browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                    sleep(2)
+
+                    window = browser.window_handles
+                    window_number = len(window)
+                    if window_number == 4:
+                        go_to_download()
+                        sleep(10)
+                        #  可通过修改配置文件切换上传模式：二进制文件流 或 json对象
+                        upload_mode = read_yaml()['upload_api']['upload_type']
+                        if int(upload_mode) == 1:
+                            upload_taxfile()
+                        elif int(upload_mode) == 2:
+                            upload_taxjson()
+                        sleep(3)
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    else:
+                        browser.refresh()
+                        except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                        upload_send_email(uc=except_content)
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
 
             elif int(grab_mode) == 2:
-                # browser.switch_to.window(handle_list[1])  # 切换到税费window
-                # browser.refresh()
-                # sleep(3)
-                # browser.switch_to.frame(
-                #     browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
-                # sleep(1)
-                # browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-                # browser.switch_to.default_content()  # 切回默认层
-                # browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-                # sleep(0.5)
-                # browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-                # sleep(3)
-                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
-                # sleep(0.5)
-                # browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-                # browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
-                # browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                # sleep(2)
-                # browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-                # browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-                # sleep(2)
-                grab_taxe(browser, tax_no)
-                window = browser.window_handles
-                window_number = len(window)
-                if window_number == 4:
-                    go_to_download()
-                    sleep(10)
-                    #  可通过修改配置文件切换上传模式：二进制文件流 或 json对象
-                    upload_mode = read_yaml()['upload_api']['upload_type']
-                    if int(upload_mode) == 1:
-                        upload_taxfile()
-                    elif int(upload_mode) == 2:
-                        upload_taxjson()
+                # 税单抓取
+                browser.switch_to.window(handle_list[1])  # 切换到税费window
+                browser.refresh()
+                sleep(3)
+                # 判断cookie是否失效，失效则重新登录
+                tax_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
+                tax_nowurl = browser.current_url
+                if tax_nowurl != tax_url:
+                    pyautogui.hotkey('alt', 'F4')
+                    browser.service.stop()
+                    create_debugwindow()
                     sleep(3)
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                elif tax_nowurl == tax_url:
+                    browser.switch_to.frame(
+                        browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+                    sleep(1)
+                    browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                    browser.switch_to.default_content()  # 切回默认层
+                    browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                    sleep(0.5)
+                    browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                    sleep(3)
+                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))  # 切入列表页面iframe
+                    sleep(0.5)
+                    browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                    browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                    browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                    sleep(2)
+                    browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                    browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                    sleep(2)
 
-                else:
-                    browser.refresh()
-                    except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
-                    upload_send_email(uc=except_content)
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                    window = browser.window_handles
+                    window_number = len(window)
+                    if window_number == 4:
+                        go_to_download()
+                        sleep(10)
+                        #  可通过修改配置文件切换上传模式：二进制文件流 或 json对象
+                        upload_mode = read_yaml()['upload_api']['upload_type']
+                        if int(upload_mode) == 1:
+                            upload_taxfile()
+                        elif int(upload_mode) == 2:
+                            upload_taxjson()
+                        sleep(3)
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    else:
+                        browser.refresh()
+                        except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                        upload_send_email(uc=except_content)
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
 
             elif int(grab_mode) == 3:
                 #  货物单抓取
-                # browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
-                # browser.refresh()
-                # sleep(3)
-                # browser.find_element_by_xpath('//span[text()="查询统计"]').click()
-                # sleep(1)
-                # browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-                # sleep(3)
-                # browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
-                # sleep(0.3)
-                # browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
-                # sleep(0.3)
-                # browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
-                # sleep(0.3)
-                # browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                # sleep(4)
-                # browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                # sleep(1)
-                # browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
-                # sleep(0.3)
-                # browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
-                # sleep(2)
-                # go_to_download()
-                # sleep(10)
-                # upload_goodsfile()
-                # sleep(3)
-                grab_goods(browser, tax_no)
-                ch.basic_ack(delivery_tag=method.delivery_tag)
+                browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                browser.refresh()
+                sleep(3)
+                # 判断cookie是否失效，失效则重新登录
+                goods_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
+                goods_nowurl = browser.current_url
+                if goods_nowurl != goods_url:
+                    pyautogui.hotkey('alt', 'F4')
+                    browser.service.stop()
+                    create_debugwindow()
+                    sleep(2)
+                elif goods_nowurl == goods_url:
+                    browser.find_element_by_xpath('//span[text()="查询统计"]').click()
+                    sleep(1)
+                    browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                    sleep(3)
+                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))  # 切入列表页面iframe
+                    sleep(0.3)
+                    browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                    sleep(0.3)
+                    browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                    sleep(0.3)
+                    browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                    sleep(4)
+                    browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                    sleep(1)
+                    browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                    sleep(0.3)
+                    browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                    sleep(2)
+                    go_to_download()
+                    sleep(10)
+                    upload_goodsfile()
+                    sleep(3)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
 
         else:
             browser.switch_to.window(handle_list[0])
@@ -680,7 +659,17 @@ def callback(ch, method, properties, body):
             sleep(1)
             browser.switch_to.window(handle_list[2])
             browser.refresh()
+            sleep(2)
+            gods_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
+            gods_nowurl = browser.current_url
+            if gods_nowurl != gods_url:
+                pyautogui.hotkey('alt', 'F4')
+                browser.service.stop()
+                create_debugwindow()
+                sleep(3)
             ch.basic_ack(delivery_tag=method.delivery_tag)
+
+        browser.service.stop()
     except BaseException as r:
         except_send_email(ec=r)
 
@@ -691,9 +680,3 @@ channel.basic_consume(queue=read_yaml()['rabbitmq']['queue'],
                       on_message_callback=callback)
 print('正在等待信息，如果想退出，请直接关闭浏览器和程序窗口')
 
-
-# if __name__ == "__main__":
-#     # 启动
-#     create_files()
-#     create_debugwindow()
-#     channel.start_consuming()
