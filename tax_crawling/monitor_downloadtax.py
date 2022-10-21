@@ -662,7 +662,7 @@ def callback(ch, method, properties, body):
                 browser.service.stop()
                 create_debugwindow()
                 sleep(3)
-                ch.basic_ack(delivery_tag=method.delivery_tag)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
 
         browser.service.stop()
     except BaseException as r:
