@@ -485,6 +485,8 @@ def callback(ch, method, properties, body):
                     browser.service.stop()
                     create_debugwindow()
                     sleep(2)
+                    message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
+                    except_send_email(content=message, ec=None)
                 elif goods_nowurl == goods_url:
                     browser.find_element_by_xpath('//span[text()="查询统计"]').click()
                     sleep(1)
@@ -561,7 +563,9 @@ def callback(ch, method, properties, body):
                     pyautogui.hotkey('alt', 'F4')
                     browser.service.stop()
                     create_debugwindow()
-                    sleep(3)
+                    sleep(2)
+                    message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
+                    except_send_email(content=message, ec=None)
                 elif tax_nowurl == tax_url:
                     browser.switch_to.frame(
                         browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
@@ -614,6 +618,8 @@ def callback(ch, method, properties, body):
                     browser.service.stop()
                     create_debugwindow()
                     sleep(2)
+                    message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
+                    except_send_email(content=message, ec=None)
                 elif goods_nowurl == goods_url:
                     browser.find_element_by_xpath('//span[text()="查询统计"]').click()
                     sleep(1)
@@ -656,7 +662,7 @@ def callback(ch, method, properties, body):
                 browser.service.stop()
                 create_debugwindow()
                 sleep(3)
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+                ch.basic_ack(delivery_tag=method.delivery_tag)
 
         browser.service.stop()
     except BaseException as r:
