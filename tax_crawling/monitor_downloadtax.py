@@ -35,10 +35,10 @@ def except_send_email(content, ec):
     """
     发送程序终止邮件提示
     """
-    yag = yagmail.SMTP(user=read_yaml()['email']['user'],
-                       password=read_yaml()['email']['password'],
-                       host=read_yaml()['email']['host'],
-                       port=read_yaml()['email']['port'])
+    yag = yagmail.SMTP(user='764178925@qq.com',
+                       password='rilvnbgrpaqabcce',
+                       host='smtp.qq.com',
+                       port=465)
     contents = '%s\n%s' % (content, ec)  # 邮件内容
     subject = 'grab_tax爬虫程序运行异常通知！'  # 邮件主题
     receiver = read_yaml()['email']['receiver']  # 接收方邮箱账号

@@ -43,13 +43,5 @@ localfile:
 
 #邮箱配置
 email:
-    #发件人邮箱
-    user: 'jiangfan@xhecloud.com'
-    #发件人邮箱密码
-    password: 'xhy@888888'
-    #发件人邮箱SMTP服务器
-    host: 'smtp.mxhichina.com'
-    #SMTP服务器端口
-    port: 465
     #收件人邮箱,如有多个，请用英文逗号分隔；示例：['xxx@xx.com','xxx@xx.com','xxx@xx.com']
     receiver: ['2224599145@qq.com']
