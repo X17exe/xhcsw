@@ -23,14 +23,15 @@ def read_yaml():
     """
     try:
         with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
-        # with open('C:/dist/monitor_downloadtax/configure.yml', encoding="utf-8") as y:
+        # with open('C:/dist/run/configure.yml', encoding="utf-8") as y:
             yaml_data = yaml.safe_load(y)
         return yaml_data
     except BaseException as t:
-        except_send_email(ec=t)
+        config_content = "配置文件读取错误，请将配置文件放置在'C:/dist/run/'目录下"
+        except_send_email(content=config_content, ec=t)
 
 
-def except_send_email(ec):
+def except_send_email(content, ec):
     """
     发送程序终止邮件提示
     """
@@ -38,23 +39,8 @@ def except_send_email(ec):
                        password=read_yaml()['email']['password'],
                        host=read_yaml()['email']['host'],
                        port=read_yaml()['email']['port'])
-    contents = '监测到grab_tax爬虫程序意外终止，请尝试关闭爬虫程序和浏览器窗口，然后按照使用手册重新运行！\n %s' % ec  # 邮件内容
-    subject = 'grab_tax爬虫程序意外终止！'  # 邮件主题
-    receiver = read_yaml()['email']['receiver']  # 接收方邮箱账号
-    yag.send(receiver, subject, contents)
-    yag.close()
-
-
-def upload_send_email(uc):
-    """
-    发送税费文件爬取异常邮件提示
-    """
-    yag = yagmail.SMTP(user=read_yaml()['email']['user'],
-                       password=read_yaml()['email']['password'],
-                       host=read_yaml()['email']['host'],
-                       port=read_yaml()['email']['port'])
-    contents = '监测到grab_tax爬虫程序爬取税费文件异常，请尽快核实！\n %s' % uc  # 邮件内容
-    subject = 'grab_tax爬虫程序抓取异常！'  # 邮件主题
+    contents = '%s\n%s' % (content, ec)  # 邮件内容
+    subject = 'grab_tax爬虫程序运行异常通知！'  # 邮件主题
     receiver = read_yaml()['email']['receiver']  # 接收方邮箱账号
     yag.send(receiver, subject, contents)
     yag.close()
@@ -122,6 +108,8 @@ def close_inform(browser):
 
 handle_list = []
 relogin_handle_list = []
+
+
 def login_taxpage(browser):
     """
     程序开始执行，进入税费单界面等待rabbitmq返回待抓取信息
@@ -171,7 +159,7 @@ def login_taxpage(browser):
             pass
         else:
             tax_ex_content = "监测到程序运行异常，请检查操作员卡是否插好，并按照使用手册重新运行程序！"
-            except_send_email(ec=tax_ex_content)
+            except_send_email(content=tax_ex_content, ec=None)
             sys.exit(0)
 
         #  进入货物申报界面
@@ -194,12 +182,13 @@ def login_taxpage(browser):
             pass
         else:
             goods_ex_content = "监测到程序运行异常，请检查操作员卡是否插好，并按照使用手册重新运行程序！"
-            except_send_email(ec=goods_ex_content)
+            except_send_email(content=goods_ex_content, ec=None)
             sys.exit(0)
 
         browser.service.stop()
     except BaseException as o:
-        except_send_email(ec=o)
+        login_content = "单一窗口未登录成功，请阅读错误消息，尝试重新登录"
+        except_send_email(content=login_content, ec=o)
 
 
 # 连接rabbit
@@ -384,7 +373,7 @@ def upload_taxjson():
     else:
         print("文件 %s 上传失败,原因：%s" % (name, msg))
         uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-        upload_send_email(uc=uploadfail_content)
+        except_send_email(content=uploadfail_content, ec=None)
         shutil.move(file_name, uploadfail_path)
 
 
@@ -415,7 +404,7 @@ def upload_taxfile():
     else:
         print("文件 %s 上传失败,原因：%s" % (name, msg))
         uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-        upload_send_email(uc=uploadfail_content)
+        except_send_email(content=uploadfail_content, ec=None)
         shutil.move(file_name, uploadfail_path)
 
 
@@ -446,7 +435,7 @@ def upload_goodsfile():
     else:
         print("文件 %s 上传失败,原因：%s" % (name, msg))
         uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
-        upload_send_email(uc=uploadfail_content)
+        except_send_email(content=uploadfail_content, ec=None)
         shutil.move(goods_file_name, uploadfail_path)
 
 
@@ -557,7 +546,7 @@ def callback(ch, method, properties, body):
                     else:
                         browser.refresh()
                         except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
-                        upload_send_email(uc=except_content)
+                        except_send_email(content=except_content, ec=None)
                         ch.basic_ack(delivery_tag=method.delivery_tag)
 
             elif int(grab_mode) == 2:
@@ -609,7 +598,7 @@ def callback(ch, method, properties, body):
                     else:
                         browser.refresh()
                         except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
-                        upload_send_email(uc=except_content)
+                        except_send_email(content=except_content, ec=None)
                         ch.basic_ack(delivery_tag=method.delivery_tag)
 
             elif int(grab_mode) == 3:
@@ -671,7 +660,8 @@ def callback(ch, method, properties, body):
 
         browser.service.stop()
     except BaseException as r:
-        except_send_email(ec=r)
+        exception_content = "抓取程序异常！"
+        except_send_email(content=exception_content, ec=r)
 
 
 # 监听队列参数
