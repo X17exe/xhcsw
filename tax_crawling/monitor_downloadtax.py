@@ -187,7 +187,7 @@ def login_taxpage(browser):
 
         browser.service.stop()
     except BaseException as o:
-        login_content = "单一窗口未登录成功，请阅读错误消息，尝试重新登录"
+        login_content = "单一窗口未登录成功，请阅读错误消息，关闭当前程序然后重新运行程序"
         except_send_email(content=login_content, ec=o)
 
 
