@@ -41,7 +41,7 @@ localfile:
     save_path: 'C:/taxefile/'
     uploaded_path: 'C:/uploadedtax/'
     uploadfail_path: 'C:/uploadfailtax/'
-    chromedebugwindow: 'C:/Users/admin/Desktop/chromedebugwindow.bat'
+    chromedebugwindow: 'C:/dist/run/chromedebugwindow.bat'
 
 #邮箱配置
 email:
