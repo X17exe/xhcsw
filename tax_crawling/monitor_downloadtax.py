@@ -22,8 +22,8 @@ def read_yaml():
     读取配置文件
     """
     try:
-        with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
-        # with open('C:/dist/run/configure.yml', encoding="utf-8") as y:
+        # with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
+        with open('C:/dist/run/configure.yml', encoding="utf-8") as y:
             yaml_data = yaml.safe_load(y)
         return yaml_data
     except BaseException as t:
@@ -192,14 +192,23 @@ def login_taxpage(browser):
 
 
 # 连接rabbit
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=read_yaml()['rabbitmq']['host'],
-                                                               port=read_yaml()['rabbitmq']['port']))
+credentials = pika.PlainCredentials(read_yaml()['rabbitmq']['user'], read_yaml()['rabbitmq']['password'])
+
+parameters = pika.ConnectionParameters(read_yaml()['rabbitmq']['host'],
+                                       read_yaml()['rabbitmq']['port'],
+                                       '/',
+                                       credentials)
+
+connection = pika.BlockingConnection(parameters)
+
+# connection = pika.BlockingConnection(pika.ConnectionParameters(host=read_yaml()['rabbitmq']['host'],
+#                                                                port=read_yaml()['rabbitmq']['port']))
 channel = connection.channel()
 
 # 声明direct
-channel.exchange_declare(exchange=read_yaml()['rabbitmq']['exchange'], exchange_type='direct', durable=False)
+channel.exchange_declare(exchange=read_yaml()['rabbitmq']['exchange'], exchange_type='direct', durable=True)
 
-channel.queue_declare(queue=read_yaml()['rabbitmq']['queue'])
+channel.queue_declare(queue=read_yaml()['rabbitmq']['queue'], durable=True)
 
 # 队列绑定交换机
 channel.queue_bind(exchange=read_yaml()['rabbitmq']['exchange'], queue=read_yaml()['rabbitmq']['queue'],

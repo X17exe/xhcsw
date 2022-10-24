@@ -5,7 +5,9 @@ single_widow:
 
 #rabbitmq配置(请设置交换机为 直连交换机（Direct Exchange））
 rabbitmq:
-    host: '192.168.2.80'
+    user: 'admin'
+    password: 'xhy2022'
+    host: '116.205.173.0'
     port: 5672
     exchange: 'hgBill.autoGetTax.topic.exchange'
     queue: 'hgBill.autoGetTax'
