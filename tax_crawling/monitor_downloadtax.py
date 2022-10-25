@@ -77,10 +77,10 @@ def create_debugwindow():
     #  创建chrome浏览器调试窗口
     cmd = read_yaml()['localfile']['chromedebugwindow']
     win32api.ShellExecute(0, 'open', cmd, '', '', 1)
-    sleep(1)
+    sleep(5)
     pyautogui.hotkey('alt', ' ', 'x')  # 最大化浏览器窗口
+    sleep(2)
     pyautogui.press('esc')
-    sleep(3)
 
     option = ChromeOptions()
     option.add_experimental_option("debuggerAddress", "127.0.0.1:9000")  # 打开已开启调试窗口
