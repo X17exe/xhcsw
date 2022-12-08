@@ -248,7 +248,7 @@ def upload_taxjson(detail_data):
 
 def upload_tax_goods_file(tax_no, filetype):
     """
-    上传税单、货物单二进制文件流
+    上传税单、货物单二进制文件流，filetype：1为报关单，2为税单
     """
     #  文件参数
     goodsfile_save_path = read_yaml()['localfile']['save_path']
@@ -430,303 +430,354 @@ def callback(ch, method, properties, body):
         sleep(1)
         refresh_code = "123456789"
         if tax_no != refresh_code:
-            grab_mode = read_yaml()['grab_mode']['mode']
-            if int(grab_mode) == 1:
-                #  货物单抓取
-                browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
-                sleep(rand_sleep())
-                browser.refresh()
-                browser.implicitly_wait(5)
-                # 判断cookie是否失效，失效则重新登录
-                goods_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
-                goods_nowurl = browser.current_url
-                if goods_nowurl != goods_url:
-                    pyautogui.hotkey('alt', 'F4')
-                    browser.service.stop()
-                    create_debugwindow()
-                    sleep(2)
-                    message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
-                    except_send_email(message, None)
-                elif goods_nowurl == goods_url:
-                    browser.find_element_by_xpath('//span[text()="综合查询"]').click()
-                    sleep(1)
-                    browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-                    WebDriverWait(browser, 10, 0.5).until(expected_conditions.presence_of_element_located(
-                        (By.XPATH, '//iframe[@name="iframe01"]')))
-                    sleep(2)
-                    # 切入列表页面iframe
-                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))
-                    browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
-                    sleep(1)
-                    browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
-                    sleep(1)
-                    browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                    WebDriverWait(browser, 100).until(
-                        lambda x: x.find_element_by_xpath(
-                            '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
-                    sleep(1)
-                    browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                    WebDriverWait(browser, 100).until(
-                        lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
-                    sleep(1)
-                    browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
-                    sleep(1)
-                    browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
-                    sleep(5)
-                    go_to_download()
-                    sleep(10)
-                    upload_tax_goods_file(str(tax_no), 1)
-                    sleep(3)
-
-                    #  税单抓取
-                    browser.switch_to.window(handle_list[1])  # 切换到税费window
+            if "BGRQ" not in tax_no:
+                grab_mode = read_yaml()['grab_mode']['mode']
+                if int(grab_mode) == 1:
+                    #  货物单抓取
+                    browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                    sleep(rand_sleep())
                     browser.refresh()
                     browser.implicitly_wait(5)
-                    # 切入iframe
-                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))
-                    sleep(1)
-                    browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-                    browser.switch_to.default_content()  # 切回默认层
-                    browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-                    sleep(1)
-                    browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-                    WebDriverWait(browser, 10, 0.5).until(expected_conditions.presence_of_element_located(
-                        (By.XPATH, '//*[@id="content-main"]/iframe[2]')))
-                    # 切入列表页面iframe
-                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))
-                    sleep(2)
-                    browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-                    browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
-                    browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                    WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath(
-                        '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[3]/div[1]').is_displayed())
-                    sleep(2)
-                    browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-                    browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-                    sleep(5)
-                    window = browser.window_handles
-                    window_number = len(window)
-                    if window_number == 4:
+                    # 判断cookie是否失效，失效则重新登录
+                    goods_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
+                    goods_nowurl = browser.current_url
+                    if goods_nowurl != goods_url:
+                        pyautogui.hotkey('alt', 'F4')
+                        browser.service.stop()
+                        create_debugwindow()
+                        sleep(2)
+                        message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
+                        except_send_email(message, None)
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    elif goods_nowurl == goods_url:
+                        browser.find_element_by_xpath('//span[text()="综合查询"]').click()
+                        sleep(1)
+                        browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                        WebDriverWait(browser, 10, 0.5).until(expected_conditions.presence_of_element_located(
+                            (By.XPATH, '//iframe[@name="iframe01"]')))
+                        sleep(2)
+                        # 切入列表页面iframe
+                        browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))
+                        browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                        sleep(1)
+                        browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                        sleep(1)
+                        browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                        WebDriverWait(browser, 100).until(
+                            lambda x: x.find_element_by_xpath(
+                                '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
+                        sleep(1)
+                        browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                        WebDriverWait(browser, 100).until(
+                            lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
+                        sleep(1)
+                        browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                        sleep(1)
+                        browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                        sleep(5)
                         go_to_download()
                         sleep(10)
-                        upload_tax_goods_file(str(tax_no), 2)
-                        sleep(1)
-                        browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 取消勾选数据
-                        tax_category_num_text = browser.find_element_by_xpath(
-                            '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]'
-                            '/div[3]/div[1]/span[1]').text  # 税种数量
-                        tax_category_num_list = re.findall(r"总共 (.*?) 条记录", tax_category_num_text)
-                        tax_category_num = int(tax_category_num_list[0])
+                        upload_tax_goods_file(str(tax_no), 1)
+                        sleep(3)
 
-                        if tax_category_num == 2:  # 能进说明报关单有两条税种
-                            '''
-                            勾选列表第一条数据
-                            '''
-                            #  获取报关单号
-                            cus_no = browser.find_element_by_xpath(
-                                '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
-                            first_tax_detail_list = []
-                            first_tax_type = get_tax_category_name(1, browser)
-                            one_data_number = get_goods_number(1, browser)
-                            if one_data_number > 10:
-                                # 说明不止十条数据，转为一页显示
-                                set_details_one_page(browser)
-                            first_data_number = get_goods_detail_number(browser)
-                            #  循环读取税费货物信息数据
-                            for detail_no in range(0, first_data_number):
-                                if detail_no == 0:
-                                    continue
-                                first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
-                                                                                detail_no, browser)
-                                first_tax_detail_list.append(first_tax_goods_detail_dict)
-                            first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
-                            upload_taxjson(first_tax_detail_json)
-                            close_tax_windows_uncheck(1, browser)
-
-                            '''
-                            勾选列表第二条数据
-                            '''
-                            second_tax_detail_list = []
-                            second_tax_type = get_tax_category_name(2, browser)
-                            two_data_number = get_goods_number(2, browser)
-                            if two_data_number > 10:
-                                # 说明不止十条数据，转为一页显示
-                                set_details_one_page(browser)
-                            second_data_number = get_goods_detail_number(browser)
-                            #  循环读取税费货物信息数据
-                            for second_detail_no in range(0, second_data_number):
-                                if second_detail_no == 0:
-                                    continue
-                                second_tax_goods_detail_dict = goods_detail_dict(second_tax_type, cus_no,
-                                                                                 second_detail_no, browser)
-                                second_tax_detail_list.append(second_tax_goods_detail_dict)
-                            second_tax_detail_json = json.dumps(second_tax_detail_list, ensure_ascii=False)
-                            upload_taxjson(second_tax_detail_json)
-                            close_tax_windows_uncheck(2, browser)
-
-                        else:  # 能进说明报关单只有一个税种
-                            '''
-                            勾选列表第一条数据
-                            '''
-                            #  获取报关单号
-                            cus_no = browser.find_element_by_xpath(
-                                '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
-                            first_tax_detail_list = []
-                            first_tax_type = get_tax_category_name(1, browser)
-                            one_data_number = get_goods_number(1, browser)
-                            if one_data_number > 10:
-                                # 说明不止十条数据，转为一页显示
-                                set_details_one_page(browser)
-                            first_data_number = get_goods_detail_number(browser)
-                            #  循环读取税费货物信息数据
-                            for detail_no in range(0, first_data_number):
-                                if detail_no == 0:
-                                    continue
-                                first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
-                                                                                detail_no, browser)
-                                first_tax_detail_list.append(first_tax_goods_detail_dict)
-                            first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
-                            upload_taxjson(first_tax_detail_json)
-                            close_tax_windows_uncheck(1, browser)
-                        ch.basic_ack(delivery_tag=method.delivery_tag)
-                    else:
+                        #  税单抓取
+                        browser.switch_to.window(handle_list[1])  # 切换到税费window
                         browser.refresh()
-                        except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
-                        except_send_email(except_content, None)
-                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                        browser.implicitly_wait(5)
+                        # 切入iframe
+                        browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))
+                        sleep(1)
+                        browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                        browser.switch_to.default_content()  # 切回默认层
+                        browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                        sleep(1)
+                        browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                        WebDriverWait(browser, 10, 0.5).until(expected_conditions.presence_of_element_located(
+                            (By.XPATH, '//*[@id="content-main"]/iframe[2]')))
+                        # 切入列表页面iframe
+                        browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))
+                        sleep(2)
+                        browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                        browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                        browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                        WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath(
+                            '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[3]/div[1]').is_displayed())
+                        sleep(2)
+                        browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                        browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                        sleep(5)
+                        window = browser.window_handles
+                        window_number = len(window)
+                        if window_number == 4:
+                            go_to_download()
+                            sleep(10)
+                            upload_tax_goods_file(str(tax_no), 2)
+                            sleep(1)
+                            browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 取消勾选数据
+                            tax_category_num_text = browser.find_element_by_xpath(
+                                '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]'
+                                '/div[3]/div[1]/span[1]').text  # 税种数量
+                            tax_category_num_list = re.findall(r"总共 (.*?) 条记录", tax_category_num_text)
+                            tax_category_num = int(tax_category_num_list[0])
 
-            elif int(grab_mode) == 2:
-                # 税单抓取
-                browser.switch_to.window(handle_list[1])  # 切换到税费window
-                sleep(rand_sleep())
-                browser.refresh()
-                browser.implicitly_wait(5)
-                # 判断cookie是否失效，失效则重新登录
-                tax_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
-                tax_nowurl = browser.current_url
-                if tax_nowurl != tax_url:
-                    pyautogui.hotkey('alt', 'F4')
-                    browser.service.stop()
-                    create_debugwindow()
-                    sleep(2)
-                    message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
-                    except_send_email(message, None)
-                elif tax_nowurl == tax_url:
-                    browser.switch_to.frame(
-                        browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
-                    sleep(1)
-                    browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-                    browser.switch_to.default_content()  # 切回默认层
-                    browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-                    sleep(1)
-                    browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-                    WebDriverWait(browser, 10, 0.5).until(expected_conditions.presence_of_element_located(
-                        (By.XPATH, '//*[@id="content-main"]/iframe[2]')))
-                    # 切入列表页面iframe
-                    browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))
-                    sleep(2)
-                    browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
-                    browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
-                    browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                    WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath(
-                        '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[3]/div[1]').is_displayed())
-                    sleep(2)
-                    browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
-                    browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
-                    sleep(5)
-                    window = browser.window_handles
-                    window_number = len(window)
-                    if window_number == 4:
+                            if tax_category_num == 2:  # 能进说明报关单有两条税种
+                                '''
+                                勾选列表第一条数据
+                                '''
+                                #  获取报关单号
+                                cus_no = browser.find_element_by_xpath(
+                                    '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
+                                first_tax_detail_list = []
+                                first_tax_type = get_tax_category_name(1, browser)
+                                one_data_number = get_goods_number(1, browser)
+                                if one_data_number > 10:
+                                    # 说明不止十条数据，转为一页显示
+                                    set_details_one_page(browser)
+                                first_data_number = get_goods_detail_number(browser)
+                                #  循环读取税费货物信息数据
+                                for detail_no in range(0, first_data_number):
+                                    if detail_no == 0:
+                                        continue
+                                    first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
+                                                                                    detail_no, browser)
+                                    first_tax_detail_list.append(first_tax_goods_detail_dict)
+                                first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
+                                upload_taxjson(first_tax_detail_json)
+                                close_tax_windows_uncheck(1, browser)
+
+                                '''
+                                勾选列表第二条数据
+                                '''
+                                second_tax_detail_list = []
+                                second_tax_type = get_tax_category_name(2, browser)
+                                two_data_number = get_goods_number(2, browser)
+                                if two_data_number > 10:
+                                    # 说明不止十条数据，转为一页显示
+                                    set_details_one_page(browser)
+                                second_data_number = get_goods_detail_number(browser)
+                                #  循环读取税费货物信息数据
+                                for second_detail_no in range(0, second_data_number):
+                                    if second_detail_no == 0:
+                                        continue
+                                    second_tax_goods_detail_dict = goods_detail_dict(second_tax_type, cus_no,
+                                                                                     second_detail_no, browser)
+                                    second_tax_detail_list.append(second_tax_goods_detail_dict)
+                                second_tax_detail_json = json.dumps(second_tax_detail_list, ensure_ascii=False)
+                                upload_taxjson(second_tax_detail_json)
+                                close_tax_windows_uncheck(2, browser)
+
+                            else:  # 能进说明报关单只有一个税种
+                                '''
+                                勾选列表第一条数据
+                                '''
+                                #  获取报关单号
+                                cus_no = browser.find_element_by_xpath(
+                                    '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
+                                first_tax_detail_list = []
+                                first_tax_type = get_tax_category_name(1, browser)
+                                one_data_number = get_goods_number(1, browser)
+                                if one_data_number > 10:
+                                    # 说明不止十条数据，转为一页显示
+                                    set_details_one_page(browser)
+                                first_data_number = get_goods_detail_number(browser)
+                                #  循环读取税费货物信息数据
+                                for detail_no in range(0, first_data_number):
+                                    if detail_no == 0:
+                                        continue
+                                    first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
+                                                                                    detail_no, browser)
+                                    first_tax_detail_list.append(first_tax_goods_detail_dict)
+                                first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
+                                upload_taxjson(first_tax_detail_json)
+                                close_tax_windows_uncheck(1, browser)
+                            ch.basic_ack(delivery_tag=method.delivery_tag)
+                        else:
+                            browser.refresh()
+                            except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                            except_send_email(except_content, None)
+                            ch.basic_ack(delivery_tag=method.delivery_tag)
+
+                elif int(grab_mode) == 2:
+                    # 税单抓取
+                    browser.switch_to.window(handle_list[1])  # 切换到税费window
+                    sleep(rand_sleep())
+                    browser.refresh()
+                    browser.implicitly_wait(5)
+                    # 判断cookie是否失效，失效则重新登录
+                    tax_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
+                    tax_nowurl = browser.current_url
+                    if tax_nowurl != tax_url:
+                        pyautogui.hotkey('alt', 'F4')
+                        browser.service.stop()
+                        create_debugwindow()
+                        sleep(2)
+                        message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
+                        except_send_email(message, None)
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    elif tax_nowurl == tax_url:
+                        browser.switch_to.frame(
+                            browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))  # 切入iframe
+                        sleep(1)
+                        browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                        browser.switch_to.default_content()  # 切回默认层
+                        browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                        sleep(1)
+                        browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+                        WebDriverWait(browser, 10, 0.5).until(expected_conditions.presence_of_element_located(
+                            (By.XPATH, '//*[@id="content-main"]/iframe[2]')))
+                        # 切入列表页面iframe
+                        browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe2"]'))
+                        sleep(2)
+                        browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
+                        browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
+                        browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
+                        WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath(
+                            '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[3]/div[1]').is_displayed())
+                        sleep(2)
+                        browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                        browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
+                        sleep(5)
+                        window = browser.window_handles
+                        window_number = len(window)
+                        if window_number == 4:
+                            go_to_download()
+                            sleep(10)
+                            upload_tax_goods_file(str(tax_no), 2)
+                            sleep(1)
+                            browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 取消勾选数据
+                            tax_category_num_text = browser.find_element_by_xpath(
+                                '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]'
+                                '/div[3]/div[1]/span[1]').text  # 税种数量
+                            tax_category_num_list = re.findall(r"总共 (.*?) 条记录", tax_category_num_text)
+                            tax_category_num = int(tax_category_num_list[0])
+
+                            if tax_category_num == 2:  # 能进说明报关单有两条税种
+                                '''
+                                勾选列表第一条数据
+                                '''
+                                #  获取报关单号
+                                cus_no = browser.find_element_by_xpath(
+                                    '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
+                                first_tax_detail_list = []
+                                first_tax_type = get_tax_category_name(1, browser)
+                                one_data_number = get_goods_number(1, browser)
+                                if one_data_number > 10:
+                                    # 说明不止十条数据，转为一页显示
+                                    set_details_one_page(browser)
+                                first_data_number = get_goods_detail_number(browser)
+                                #  循环读取税费货物信息数据
+                                for detail_no in range(0, first_data_number):
+                                    if detail_no == 0:
+                                        continue
+                                    first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
+                                                                                    detail_no, browser)
+                                    first_tax_detail_list.append(first_tax_goods_detail_dict)
+                                first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
+                                upload_taxjson(first_tax_detail_json)
+                                close_tax_windows_uncheck(1, browser)
+
+                                '''
+                                勾选列表第二条数据
+                                '''
+                                second_tax_detail_list = []
+                                second_tax_type = get_tax_category_name(2, browser)
+                                two_data_number = get_goods_number(2, browser)
+                                if two_data_number > 10:
+                                    # 说明不止十条数据，转为一页显示
+                                    set_details_one_page(browser)
+                                second_data_number = get_goods_detail_number(browser)
+                                #  循环读取税费货物信息数据
+                                for second_detail_no in range(0, second_data_number):
+                                    if second_detail_no == 0:
+                                        continue
+                                    second_tax_goods_detail_dict = goods_detail_dict(second_tax_type, cus_no,
+                                                                                     second_detail_no, browser)
+                                    second_tax_detail_list.append(second_tax_goods_detail_dict)
+                                second_tax_detail_json = json.dumps(second_tax_detail_list, ensure_ascii=False)
+                                upload_taxjson(second_tax_detail_json)
+                                close_tax_windows_uncheck(2, browser)
+
+                            else:  # 能进说明报关单只有一个税种
+                                '''
+                                勾选列表第一条数据
+                                '''
+                                #  获取报关单号
+                                cus_no = browser.find_element_by_xpath(
+                                    '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
+                                first_tax_detail_list = []
+                                first_tax_type = get_tax_category_name(1, browser)
+                                one_data_number = get_goods_number(1, browser)
+                                if one_data_number > 10:
+                                    # 说明不止十条数据，转为一页显示
+                                    set_details_one_page(browser)
+                                first_data_number = get_goods_detail_number(browser)
+                                #  循环读取税费货物信息数据
+                                for detail_no in range(0, first_data_number):
+                                    if detail_no == 0:
+                                        continue
+                                    first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
+                                                                                    detail_no, browser)
+                                    first_tax_detail_list.append(first_tax_goods_detail_dict)
+                                first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
+                                upload_taxjson(first_tax_detail_json)
+                                close_tax_windows_uncheck(1, browser)
+                            ch.basic_ack(delivery_tag=method.delivery_tag)
+                        else:
+                            browser.refresh()
+                            except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                            except_send_email(except_content, None)
+                            ch.basic_ack(delivery_tag=method.delivery_tag)
+
+                elif int(grab_mode) == 3:
+                    #  货物单抓取
+                    browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
+                    sleep(rand_sleep())
+                    browser.refresh()
+                    browser.implicitly_wait(5)
+                    # 判断cookie是否失效，失效则重新登录
+                    goods_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
+                    goods_nowurl = browser.current_url
+                    if goods_nowurl != goods_url:
+                        pyautogui.hotkey('alt', 'F4')
+                        browser.service.stop()
+                        create_debugwindow()
+                        sleep(2)
+                        message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
+                        except_send_email(message, None)
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    elif goods_nowurl == goods_url:
+                        browser.find_element_by_xpath('//span[text()="综合查询"]').click()
+                        sleep(1)
+                        browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+                        WebDriverWait(browser, 10, 0.5).until(expected_conditions.presence_of_element_located(
+                            (By.XPATH, '//iframe[@name="iframe01"]')))
+                        # 切入列表页面iframe
+                        browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))
+                        browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                        sleep(1)
+                        browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
+                        sleep(1)
+                        browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
+                        WebDriverWait(browser, 100).until(
+                            lambda x: x.find_element_by_xpath(
+                                '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
+                        sleep(1)
+                        browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
+                        WebDriverWait(browser, 100).until(
+                            lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
+                        sleep(1)
+                        browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
+                        sleep(1)
+                        browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
+                        sleep(5)
                         go_to_download()
                         sleep(10)
-                        upload_tax_goods_file(str(tax_no), 2)
-                        sleep(1)
-                        browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 取消勾选数据
-                        tax_category_num_text = browser.find_element_by_xpath(
-                            '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]'
-                            '/div[3]/div[1]/span[1]').text  # 税种数量
-                        tax_category_num_list = re.findall(r"总共 (.*?) 条记录", tax_category_num_text)
-                        tax_category_num = int(tax_category_num_list[0])
-
-                        if tax_category_num == 2:  # 能进说明报关单有两条税种
-                            '''
-                            勾选列表第一条数据
-                            '''
-                            #  获取报关单号
-                            cus_no = browser.find_element_by_xpath(
-                                '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
-                            first_tax_detail_list = []
-                            first_tax_type = get_tax_category_name(1, browser)
-                            one_data_number = get_goods_number(1, browser)
-                            if one_data_number > 10:
-                                # 说明不止十条数据，转为一页显示
-                                set_details_one_page(browser)
-                            first_data_number = get_goods_detail_number(browser)
-                            #  循环读取税费货物信息数据
-                            for detail_no in range(0, first_data_number):
-                                if detail_no == 0:
-                                    continue
-                                first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
-                                                                                detail_no, browser)
-                                first_tax_detail_list.append(first_tax_goods_detail_dict)
-                            first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
-                            upload_taxjson(first_tax_detail_json)
-                            close_tax_windows_uncheck(1, browser)
-
-                            '''
-                            勾选列表第二条数据
-                            '''
-                            second_tax_detail_list = []
-                            second_tax_type = get_tax_category_name(2, browser)
-                            two_data_number = get_goods_number(2, browser)
-                            if two_data_number > 10:
-                                # 说明不止十条数据，转为一页显示
-                                set_details_one_page(browser)
-                            second_data_number = get_goods_detail_number(browser)
-                            #  循环读取税费货物信息数据
-                            for second_detail_no in range(0, second_data_number):
-                                if second_detail_no == 0:
-                                    continue
-                                second_tax_goods_detail_dict = goods_detail_dict(second_tax_type, cus_no,
-                                                                                 second_detail_no, browser)
-                                second_tax_detail_list.append(second_tax_goods_detail_dict)
-                            second_tax_detail_json = json.dumps(second_tax_detail_list, ensure_ascii=False)
-                            upload_taxjson(second_tax_detail_json)
-                            close_tax_windows_uncheck(2, browser)
-
-                        else:  # 能进说明报关单只有一个税种
-                            '''
-                            勾选列表第一条数据
-                            '''
-                            #  获取报关单号
-                            cus_no = browser.find_element_by_xpath(
-                                '//*[@id="taxationQueryNTable"]/tbody/tr[1]/td[3]').text
-                            first_tax_detail_list = []
-                            first_tax_type = get_tax_category_name(1, browser)
-                            one_data_number = get_goods_number(1, browser)
-                            if one_data_number > 10:
-                                # 说明不止十条数据，转为一页显示
-                                set_details_one_page(browser)
-                            first_data_number = get_goods_detail_number(browser)
-                            #  循环读取税费货物信息数据
-                            for detail_no in range(0, first_data_number):
-                                if detail_no == 0:
-                                    continue
-                                first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
-                                                                                detail_no, browser)
-                                first_tax_detail_list.append(first_tax_goods_detail_dict)
-                            first_tax_detail_json = json.dumps(first_tax_detail_list, ensure_ascii=False)
-                            upload_taxjson(first_tax_detail_json)
-                            close_tax_windows_uncheck(1, browser)
+                        upload_tax_goods_file(str(tax_no), 1)
+                        sleep(3)
                         ch.basic_ack(delivery_tag=method.delivery_tag)
-                    else:
-                        browser.refresh()
-                        except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
-                        except_send_email(except_content, None)
-                        ch.basic_ack(delivery_tag=method.delivery_tag)
-
-            elif int(grab_mode) == 3:
-                #  货物单抓取
+            else:
+                #  更新后的货物单抓取
+                new_tax_no = tax_no.replace('BGRQ#', '')
                 browser.switch_to.window(handle_list[2])  # 切换到货物申报界面
                 sleep(rand_sleep())
                 browser.refresh()
@@ -741,6 +792,7 @@ def callback(ch, method, properties, body):
                     sleep(2)
                     message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
                     except_send_email(message, None)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
                 elif goods_nowurl == goods_url:
                     browser.find_element_by_xpath('//span[text()="综合查询"]').click()
                     sleep(1)
@@ -749,7 +801,7 @@ def callback(ch, method, properties, body):
                         (By.XPATH, '//iframe[@name="iframe01"]')))
                     # 切入列表页面iframe
                     browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="iframe01"]'))
-                    browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(tax_no)  # 输入待抓取单号
+                    browser.find_element_by_xpath('//input[@id="entryId1"]').send_keys(new_tax_no)  # 输入待抓取单号
                     sleep(1)
                     browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
                     sleep(1)
@@ -768,7 +820,7 @@ def callback(ch, method, properties, body):
                     sleep(5)
                     go_to_download()
                     sleep(10)
-                    upload_tax_goods_file(str(tax_no), 1)
+                    upload_tax_goods_file(str(new_tax_no), 1)
                     sleep(3)
                     ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -789,12 +841,14 @@ def callback(ch, method, properties, body):
                 browser.service.stop()
                 create_debugwindow()
                 sleep(3)
+                ch.basic_ack(delivery_tag=method.delivery_tag)
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
         browser.service.stop()
     except BaseException as r:
         exception_content = "抓取程序异常！"
         except_send_email(exception_content, r)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
 # 监听队列参数
