@@ -389,7 +389,7 @@ def go_to_download():
 
 def top_windows():
     """
-    置顶chrome_debug浏览器窗口
+    在windows置顶chrome_debug浏览器窗口
     """
     def get_all_hwnd(hwnd, mouse):
         if (win32gui.IsWindow(hwnd) and
@@ -535,9 +535,7 @@ def callback(ch, method, properties, body):
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
-                                for detail_no in range(0, first_data_number):
-                                    if detail_no == 0:
-                                        continue
+                                for detail_no in range(1, first_data_number):
                                     first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
                                                                                     detail_no, browser)
                                     first_tax_detail_list.append(first_tax_goods_detail_dict)
@@ -556,9 +554,7 @@ def callback(ch, method, properties, body):
                                     set_details_one_page(browser)
                                 second_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
-                                for second_detail_no in range(0, second_data_number):
-                                    if second_detail_no == 0:
-                                        continue
+                                for second_detail_no in range(1, second_data_number):
                                     second_tax_goods_detail_dict = goods_detail_dict(second_tax_type, cus_no,
                                                                                      second_detail_no, browser)
                                     second_tax_detail_list.append(second_tax_goods_detail_dict)
@@ -581,9 +577,7 @@ def callback(ch, method, properties, body):
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
-                                for detail_no in range(0, first_data_number):
-                                    if detail_no == 0:
-                                        continue
+                                for detail_no in range(1, first_data_number):
                                     first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
                                                                                     detail_no, browser)
                                     first_tax_detail_list.append(first_tax_goods_detail_dict)
@@ -666,9 +660,7 @@ def callback(ch, method, properties, body):
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
-                                for detail_no in range(0, first_data_number):
-                                    if detail_no == 0:
-                                        continue
+                                for detail_no in range(1, first_data_number):
                                     first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
                                                                                     detail_no, browser)
                                     first_tax_detail_list.append(first_tax_goods_detail_dict)
@@ -687,9 +679,7 @@ def callback(ch, method, properties, body):
                                     set_details_one_page(browser)
                                 second_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
-                                for second_detail_no in range(0, second_data_number):
-                                    if second_detail_no == 0:
-                                        continue
+                                for second_detail_no in range(1, second_data_number):
                                     second_tax_goods_detail_dict = goods_detail_dict(second_tax_type, cus_no,
                                                                                      second_detail_no, browser)
                                     second_tax_detail_list.append(second_tax_goods_detail_dict)
@@ -712,9 +702,7 @@ def callback(ch, method, properties, body):
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
-                                for detail_no in range(0, first_data_number):
-                                    if detail_no == 0:
-                                        continue
+                                for detail_no in range(1, first_data_number):
                                     first_tax_goods_detail_dict = goods_detail_dict(first_tax_type, cus_no,
                                                                                     detail_no, browser)
                                     first_tax_detail_list.append(first_tax_goods_detail_dict)
