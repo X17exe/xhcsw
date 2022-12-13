@@ -15,11 +15,11 @@ rabbitmq:
 
 #税费文件上传接口配置
 upload_api:
-    # 税费二进制文件流数据上传接口
-    tax_goods_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadTaxMultipart/'
+    # 税单、货单二进制文件流数据上传接口
+    tax_goods_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadBillMultipart/'
 
     # 税费json对象上传接口：
-    tax_json_api: 'http://192.168.2.87:9010/import/operationCustomsBillReportInfo/declare/uploadTaxJson'
+    tax_json_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadTaxJson'
 
 # 抓取模式
 grab_mode:

@@ -33,6 +33,7 @@ def read_yaml():
     except BaseException as t:
         config_content = "配置文件读取错误，请将配置文件放置在'C:/dist/run/'目录下"
         except_send_email(content=config_content, ec=t)
+        print(t)
 
 
 def except_send_email(content, ec):
@@ -223,7 +224,7 @@ def rand_sleep():
     """
     随机生成等待时间，等待该时间后再去抓取税单
     """
-    time = random.randint(1, 5)
+    time = random.randint(5, 10)
     # time = random.randint(30, 60)
     return time
 
@@ -267,11 +268,12 @@ def upload_tax_goods_file(tax_no, filetype):
     content.close()
     code = int(r.json()['code'])
     msg = r.json()['msg']
+    error_text = r.text
     if code == 200:
         shutil.move(goods_file_name, uploaded_path)
         print("文件 %s 上传成功！" % name)
     else:
-        print("文件 %s 上传失败,原因：%s" % (name, msg))
+        print("文件 %s 上传失败,原因：%s\n详情：%s" % (name, msg, error_text))
         uploadfail_content = "税费文件 %s 上传失败，请在 %s 文件中查看!\n失败原因：%s" % (name, uploadfail_path, msg)
         except_send_email(content=uploadfail_content, ec=None)
         shutil.move(goods_file_name, uploadfail_path)
@@ -285,7 +287,7 @@ def get_goods_number(line, browser):
     #  校验税单货物信息列表是否渲染完成
     WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div'
                                                                         '/div[1]/div[3]/div[1]').is_displayed())
-    sleep(1)
+    sleep(6)
     number_text = browser.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div/div[1]/div[3]/div[1]'
                                                 '/span[@class="pagination-info"]').text
     data_number_list = re.findall(r"总共 (.*?) 条记录", number_text)
@@ -298,7 +300,7 @@ def set_details_one_page(browser):
     #  点击展开分页条数按钮
     browser.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div/div[1]/div[3]/div[1]'
                                   '/span[2]/span/button').click()
-    sleep(1)
+    sleep(2)
     #  点击选择最大的页面条数按钮
     browser.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div/div[1]/div[3]/div[1]'
                                   '/span[2]/span/ul/li[last()]').click()
@@ -374,9 +376,9 @@ def go_to_download():
     """
     sleep(2)
     pyautogui.hotkey('ctrl', 's')  # 保存
-    sleep(1)
+    sleep(3)
     pyautogui.press('left')
-    sleep(1)
+    sleep(2)
     pyautogui.write(read_yaml()['localfile']['file_path_prefix'])
     sleep(2)
     pyautogui.press('shift')  # 防止中文输入法
@@ -466,11 +468,11 @@ def callback(ch, method, properties, body):
                         WebDriverWait(browser, 100).until(
                             lambda x: x.find_element_by_xpath(
                                 '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
-                        sleep(1)
+                        sleep(4)
                         browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
                         WebDriverWait(browser, 100).until(
                             lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
-                        sleep(1)
+                        sleep(4)
                         browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
                         sleep(1)
                         browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
@@ -500,10 +502,10 @@ def callback(ch, method, properties, body):
                         browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
                         browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
                         browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                        WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath(
-                            '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[3]/div[1]').is_displayed())
-                        sleep(2)
-                        browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                        sleep(5)
+                        browser.find_element_by_xpath('//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[2]/div[1]'
+                                                      '/table/thead/tr/th[1]/div[1]/label/input').click()  # 勾选数据
+                        sleep(1)
                         browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
                         sleep(5)
                         window = browser.window_handles
@@ -587,7 +589,7 @@ def callback(ch, method, properties, body):
                             ch.basic_ack(delivery_tag=method.delivery_tag)
                         else:
                             browser.refresh()
-                            except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                            except_content = '报关单 %s 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
                             except_send_email(except_content, None)
                             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -625,10 +627,10 @@ def callback(ch, method, properties, body):
                         browser.find_element_by_xpath('//input[@id="entryIdN"]').clear()
                         browser.find_element_by_xpath('//input[@id="entryIdN"]').send_keys(tax_no)
                         browser.find_element_by_xpath('//button[@id="taxationQueryBtnN"]').click()  # 未支付页面查询按钮
-                        WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath(
-                            '//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[3]/div[1]').is_displayed())
-                        sleep(2)
-                        browser.find_element_by_xpath('(//input[@name="btSelectAll"])[1]').click()  # 勾选数据
+                        sleep(5)
+                        browser.find_element_by_xpath('//*[@id="tab-1"]/div/div/div[3]/div/div/div/div[1]/div[2]/div[1]'
+                                                      '/table/thead/tr/th[1]/div[1]/label/input').click()  # 勾选数据
+                        sleep(1)
                         browser.find_element_by_xpath('//button[@id="taxationPrintNButton"]').click()  # 点击预览打印
                         sleep(5)
                         window = browser.window_handles
@@ -712,7 +714,7 @@ def callback(ch, method, properties, body):
                             ch.basic_ack(delivery_tag=method.delivery_tag)
                         else:
                             browser.refresh()
-                            except_content = '报关单 %i 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
+                            except_content = '报关单 %s 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
                             except_send_email(except_content, None)
                             ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -749,11 +751,11 @@ def callback(ch, method, properties, body):
                         WebDriverWait(browser, 100).until(
                             lambda x: x.find_element_by_xpath(
                                 '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
-                        sleep(1)
+                        sleep(5)
                         browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
                         WebDriverWait(browser, 100).until(
                             lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
-                        sleep(1)
+                        sleep(4)
                         browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
                         sleep(1)
                         browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
@@ -778,7 +780,7 @@ def callback(ch, method, properties, body):
                     browser.service.stop()
                     create_debugwindow()
                     sleep(2)
-                    message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % tax_no
+                    message = "报关单 %s 因程序重启导致抓取失败，请将该报关单号反馈给技术人员重新抓取" % new_tax_no
                     except_send_email(message, None)
                     ch.basic_ack(delivery_tag=method.delivery_tag)
                 elif goods_nowurl == goods_url:
@@ -797,11 +799,11 @@ def callback(ch, method, properties, body):
                     WebDriverWait(browser, 100).until(
                         lambda x: x.find_element_by_xpath(
                             '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
-                    sleep(1)
+                    sleep(5)
                     browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
                     WebDriverWait(browser, 100).until(
                         lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
-                    sleep(1)
+                    sleep(4)
                     browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
                     sleep(1)
                     browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
