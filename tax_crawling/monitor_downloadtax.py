@@ -285,9 +285,9 @@ def get_goods_number(line, browser):
     sleep(1)
     browser.find_element_by_xpath('//button[@id="taxationGoodsButton"]').click()  # 点击税单货物信息
     #  校验税单货物信息列表是否渲染完成
-    WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div'
-                                                                        '/div[1]/div[3]/div[1]').is_displayed())
-    sleep(6)
+    # WebDriverWait(browser, 100).until(lambda x: x.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div'
+    #                                                                     '/div[1]/div[3]/div[1]').is_displayed())
+    sleep(8)
     number_text = browser.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div/div[1]/div[3]/div[1]'
                                                 '/span[@class="pagination-info"]').text
     data_number_list = re.findall(r"总共 (.*?) 条记录", number_text)
@@ -298,8 +298,8 @@ def get_goods_number(line, browser):
 
 def set_details_one_page(browser):
     #  点击展开分页条数按钮
-    browser.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div/div[1]/div[3]/div[1]'
-                                  '/span[2]/span/button').click()
+    browser.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div/div[1]/div[3]/div[1]/span[2]/span/button'
+                                  ).click()
     sleep(2)
     #  点击选择最大的页面条数按钮
     browser.find_element_by_xpath('//*[@id="taxationGoods"]/div/div/div/div/div[1]/div[3]/div[1]'
@@ -534,6 +534,7 @@ def callback(ch, method, properties, body):
                                 one_data_number = get_goods_number(1, browser)
                                 if one_data_number > 10:
                                     # 说明不止十条数据，转为一页显示
+                                    sleep(3)
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
@@ -553,6 +554,7 @@ def callback(ch, method, properties, body):
                                 two_data_number = get_goods_number(2, browser)
                                 if two_data_number > 10:
                                     # 说明不止十条数据，转为一页显示
+                                    sleep(3)
                                     set_details_one_page(browser)
                                 second_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
@@ -576,6 +578,7 @@ def callback(ch, method, properties, body):
                                 one_data_number = get_goods_number(1, browser)
                                 if one_data_number > 10:
                                     # 说明不止十条数据，转为一页显示
+                                    sleep(3)
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
@@ -659,6 +662,7 @@ def callback(ch, method, properties, body):
                                 one_data_number = get_goods_number(1, browser)
                                 if one_data_number > 10:
                                     # 说明不止十条数据，转为一页显示
+                                    sleep(3)
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
@@ -678,6 +682,7 @@ def callback(ch, method, properties, body):
                                 two_data_number = get_goods_number(2, browser)
                                 if two_data_number > 10:
                                     # 说明不止十条数据，转为一页显示
+                                    sleep(3)
                                     set_details_one_page(browser)
                                 second_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
@@ -701,6 +706,7 @@ def callback(ch, method, properties, body):
                                 one_data_number = get_goods_number(1, browser)
                                 if one_data_number > 10:
                                     # 说明不止十条数据，转为一页显示
+                                    sleep(3)
                                     set_details_one_page(browser)
                                 first_data_number = get_goods_detail_number(browser)
                                 #  循环读取税费货物信息数据
@@ -845,5 +851,5 @@ def callback(ch, method, properties, body):
 channel.basic_consume(queue=read_yaml()['rabbitmq']['queue'],
                       auto_ack=False,
                       on_message_callback=callback)
-print('爬虫程序运行中，如果想退出，请直接关闭浏览器和程序窗口')
+print('爬虫程序运行中，如需退出，请直接关闭chrome浏览器和本窗口')
 
