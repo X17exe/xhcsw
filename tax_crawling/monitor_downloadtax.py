@@ -465,14 +465,14 @@ def callback(ch, method, properties, body):
                         browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
                         sleep(1)
                         browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                        WebDriverWait(browser, 100).until(
-                            lambda x: x.find_element_by_xpath(
-                                '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
-                        sleep(4)
+                        # WebDriverWait(browser, 100).until(
+                        #     lambda x: x.find_element_by_xpath(
+                        #         '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
+                        sleep(5)
                         browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                        WebDriverWait(browser, 100).until(
-                            lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
-                        sleep(4)
+                        # WebDriverWait(browser, 100).until(
+                        #     lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
+                        sleep(5)
                         browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
                         sleep(1)
                         browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
@@ -754,14 +754,14 @@ def callback(ch, method, properties, body):
                         browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
                         sleep(1)
                         browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                        WebDriverWait(browser, 100).until(
-                            lambda x: x.find_element_by_xpath(
-                                '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
+                        # WebDriverWait(browser, 100).until(
+                        #     lambda x: x.find_element_by_xpath(
+                        #         '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
                         sleep(5)
                         browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                        WebDriverWait(browser, 100).until(
-                            lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
-                        sleep(4)
+                        # WebDriverWait(browser, 100).until(
+                        #     lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
+                        sleep(5)
                         browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
                         sleep(1)
                         browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
@@ -802,14 +802,14 @@ def callback(ch, method, properties, body):
                     browser.find_element_by_xpath('//input[@id="operateDate2"]').click()  # 选择本周
                     sleep(1)
                     browser.find_element_by_xpath('//button[@id="decQuery"]').click()  # 点击查询
-                    WebDriverWait(browser, 100).until(
-                        lambda x: x.find_element_by_xpath(
-                            '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
+                    # WebDriverWait(browser, 100).until(
+                    #     lambda x: x.find_element_by_xpath(
+                    #         '//*[@id="cus_declare_table_div"]/div[1]/div[2]/div[4]/div[1]').is_displayed())
                     sleep(5)
                     browser.find_element_by_xpath('//button[@id="decPdfPrint"]').click()  # 打印
-                    WebDriverWait(browser, 100).until(
-                        lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
-                    sleep(4)
+                    # WebDriverWait(browser, 100).until(
+                    #     lambda x: x.find_element_by_xpath('//a[text()= "打印预览"]').is_displayed())
+                    sleep(5)
                     browser.find_element_by_xpath('//input[@id="printSort3"]').click()  # 勾选商品附加页
                     sleep(1)
                     browser.find_element_by_xpath('//a[text()= "打印预览"]').click()
