@@ -79,7 +79,8 @@ def create_files():
 
 
 def create_debugwindow():
-    #  创建chrome浏览器调试窗口
+    #  创建chrome浏览器调试窗口,创建窗口前先杀掉可能存在的debug窗口
+    os.system('powershell -command "Get-Process chrome | ForEach-Object { $_.CloseMainWindow() | Out-Null}"')
     cmd = read_yaml()['localfile']['chromedebugwindow']
     win32api.ShellExecute(0, 'open', cmd, '', '', 1)
     sleep(5)
@@ -370,25 +371,6 @@ def goods_detail_dict(tax_category, cus_declaration_no, line, browser):
     return detail_dict
 
 
-def go_to_download():
-    """
-    税单下载页面，操作下载
-    """
-    sleep(2)
-    pyautogui.hotkey('ctrl', 's')  # 保存
-    sleep(3)
-    pyautogui.press('left')
-    sleep(2)
-    pyautogui.write(read_yaml()['localfile']['file_path_prefix'])
-    sleep(2)
-    pyautogui.press('shift')  # 防止中文输入法
-    sleep(2)
-    pyautogui.press('enter')  # 点击保存本地
-    sleep(1)
-    pyautogui.hotkey('ctrl', 'w')  # 关闭下载页面
-    sleep(1)
-
-
 def top_windows():
     """
     在windows置顶chrome_debug浏览器窗口
@@ -415,6 +397,26 @@ def top_windows():
 
                 # 解决被最小化的情况
                 win32gui.ShowWindow(h, win32con.SW_MAXIMIZE)
+
+
+def go_to_download():
+    """
+    税单下载页面，操作下载
+    """
+    top_windows()
+    sleep(2)
+    pyautogui.hotkey('ctrl', 's')  # 保存
+    sleep(3)
+    pyautogui.press('left')
+    sleep(2)
+    pyautogui.write(read_yaml()['localfile']['file_path_prefix'])
+    sleep(2)
+    pyautogui.press('shift')  # 防止中文输入法
+    sleep(2)
+    pyautogui.press('enter')  # 点击保存本地
+    sleep(1)
+    pyautogui.hotkey('ctrl', 'w')  # 关闭下载页面
+    sleep(1)
 
 
 # 回调爬取
