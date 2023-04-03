@@ -427,6 +427,16 @@ def go_to_download():
     sleep(1)
 
 
+def grab_completion_prompt():
+    sleep(10)
+    url = read_yaml()['upload_api']['rabbitmq']
+    r = requests.get(url, auth=(read_yaml()['rabbitmq']['user'], read_yaml()['rabbitmq']['password']))
+    dic = json.loads(r.text)
+    mes_num = dic['messages_unacknowledged']
+    if int(mes_num) == 0:
+        win32api.MessageBox(0, "已全部抓取完成！", "grab_tax抓取提示：", win32con.MB_OK)
+
+
 # 回调爬取
 def callback(ch, method, properties, body):
     """
@@ -607,11 +617,13 @@ def callback(ch, method, properties, body):
                                 upload_taxjson(first_tax_detail_json)
                                 close_tax_windows_uncheck(1, browser)
                             ch.basic_ack(delivery_tag=method.delivery_tag)
+                            grab_completion_prompt()
                         else:
                             # browser.refresh()
                             except_content = '报关单 %s 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
                             except_send_email(except_content, None)
                             ch.basic_ack(delivery_tag=method.delivery_tag)
+                            grab_completion_prompt()
 
                 elif int(grab_mode) == 2:
                     # 税单抓取
@@ -736,11 +748,13 @@ def callback(ch, method, properties, body):
                                 upload_taxjson(first_tax_detail_json)
                                 close_tax_windows_uncheck(1, browser)
                             ch.basic_ack(delivery_tag=method.delivery_tag)
+                            grab_completion_prompt()
                         else:
                             # browser.refresh()
                             except_content = '报关单 %s 未在单一系统未支付税费模块查询到相关税费文件，请尽快核实' % tax_no
                             except_send_email(except_content, None)
                             ch.basic_ack(delivery_tag=method.delivery_tag)
+                            grab_completion_prompt()
 
                 elif int(grab_mode) == 3:
                     #  货物单抓取
@@ -792,6 +806,7 @@ def callback(ch, method, properties, body):
                         upload_tax_goods_file(str(tax_no), 1)
                         sleep(3)
                         ch.basic_ack(delivery_tag=method.delivery_tag)
+                        grab_completion_prompt()
             else:
                 #  更新后的货物单抓取
                 new_tax_no = tax_no.replace('BGRQ#', '')
@@ -843,6 +858,7 @@ def callback(ch, method, properties, body):
                     upload_tax_goods_file(str(new_tax_no), 1)
                     sleep(3)
                     ch.basic_ack(delivery_tag=method.delivery_tag)
+                    grab_completion_prompt()
 
         else:
             browser.switch_to.window(handle_list[0])
@@ -878,7 +894,7 @@ def callback(ch, method, properties, body):
 
         browser.service.stop()
     except BaseException as r:
-        exception_content = "抓取程序异常！\n 报关单号： %s 未抓取成功！" % tax_no
+        exception_content = "报关单号： %s 未抓取成功！" % tax_no
         except_send_email(exception_content, r)
         browser.switch_to.window(handle_list[0])
         browser.refresh()

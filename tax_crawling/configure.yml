@@ -6,8 +6,8 @@ single_widow:
 #rabbitmq配置(请设置交换机为 直连交换机（Direct Exchange））
 rabbitmq:
     user: 'admin'
-    password: 'xhy2022'
-    host: '116.205.173.0'
+    password: 'admin'
+    host: '192.168.2.80'
     port: 5672
     exchange: 'hgBill.autoGetTax.topic.exchange'
     queue: 'hgBill.autoGetTax'
@@ -21,6 +21,9 @@ upload_api:
     # 税费json对象上传接口：
     tax_json_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadTaxJson'
 
+    #mq接口访问地址
+    rabbitmq: 'http://192.168.2.80:15672/api/queues/%2F/hgBill.autoGetTax'
+
 # 抓取模式
 grab_mode:
     # 抓取模式: 1:税单和货单都抓取； 2：只抓取税单； 3：只抓取货单
@@ -33,7 +36,8 @@ localfile:
     save_path: 'C:/taxefile/'
     uploaded_path: 'C:/uploadedtax/'
     uploadfail_path: 'C:/uploadfailtax/'
-    chromedebugwindow: 'C:/dist/run/chromedebugwindow.bat'
+    #chromedebugwindow: 'C:/dist/run/chromedebugwindow.bat'
+    chromedebugwindow: 'C:/Users/admin/Desktop/chromedebugwindow.bat'
 
 #邮箱配置
 email:
