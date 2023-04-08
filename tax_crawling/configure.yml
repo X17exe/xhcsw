@@ -27,7 +27,7 @@ upload_api:
 # 抓取模式
 grab_mode:
     # 抓取模式: 1:税单和货单都抓取； 2：只抓取税单； 3：只抓取货单
-    mode: 2
+    mode: 1
 
 #本地文件配置
 localfile:
