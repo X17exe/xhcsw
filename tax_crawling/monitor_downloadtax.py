@@ -33,8 +33,8 @@ def read_yaml():
     读取配置文件
     """
     try:
-        with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
-        # with open('C:/dist/run/configure.yml', encoding="utf-8") as y:
+        # with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
+        with open('C:/dist/run/configure.yml', encoding="utf-8") as y:
             yaml_data = yaml.safe_load(y)
         return yaml_data
     except BaseException as t:
@@ -191,17 +191,27 @@ def login_taxpage(browser):
         relogin_handle_list.append(tax_index)
         tax_should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=spl'
         tax_current_url = browser.current_url
-        if tax_current_url == tax_should_url:
-            # pass
-            browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))
-            sleep(1)
-            browser.find_element_by_xpath('//img[@alt="关闭"]').click()
-            browser.switch_to.default_content()  # 切回默认层
-            browser.find_element_by_xpath('//span[text()="支付管理"]').click()
-            sleep(1)
-            browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
-        else:
-            #  避免切换海关代码，重新登录后无法进入税单界面
+        try:
+            if tax_current_url == tax_should_url:
+                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))
+                sleep(1)
+                browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                browser.switch_to.default_content()  # 切回默认层
+                browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                sleep(1)
+                browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+            else:
+                #  避免切换海关代码，重新登录后无法进入税单界面
+                browser.refresh()
+                browser.implicitly_wait(10)
+                browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))
+                sleep(1)
+                browser.find_element_by_xpath('//img[@alt="关闭"]').click()
+                browser.switch_to.default_content()  # 切回默认层
+                browser.find_element_by_xpath('//span[text()="支付管理"]').click()
+                sleep(1)
+                browser.find_element_by_xpath('//a[text()="税费单支付"]').click()
+        except:
             browser.refresh()
             browser.implicitly_wait(10)
             browser.switch_to.frame(browser.find_element_by_xpath('//iframe[@name="layui-layer-iframe2"]'))
@@ -228,11 +238,18 @@ def login_taxpage(browser):
         relogin_handle_list.append(goods_index)
         goods_should_url = 'https://sz.singlewindow.cn/dyck/swProxy/deskserver/sw/deskIndex?menu_id=dec001'
         goods_current_url = browser.current_url
-        if goods_current_url == goods_should_url:
-            browser.find_element_by_xpath('//span[text()="综合查询"]').click()
-            sleep(1)
-            browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
-        else:
+        try:
+            if goods_current_url == goods_should_url:
+                browser.find_element_by_xpath('//span[text()="综合查询"]').click()
+                sleep(1)
+                browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+            else:
+                browser.refresh()
+                browser.implicitly_wait(10)
+                browser.find_element_by_xpath('//span[text()="综合查询"]').click()
+                sleep(1)
+                browser.find_element_by_xpath('//a[text()= "报关数据查询"]').click()
+        except:
             browser.refresh()
             browser.implicitly_wait(10)
             browser.find_element_by_xpath('//span[text()="综合查询"]').click()
@@ -319,7 +336,7 @@ def upload_tax_goods_file(tax_no, filetype):
     content.close()
     code = int(r.json()['code'])
     msg = r.json()['msg']
-    error_text = r.text
+    # error_text = r.text
     if code == 200:
         # shutil.move(goods_file_name, uploaded_path)
         print("文件 %s 上传成功！" % name)
@@ -448,8 +465,11 @@ def grab_completion_prompt():
     mes_num = dic['messages_unacknowledged']
     if int(mes_num) == 0:
         win32api.MessageBox(0, "已全部抓取完成！", "grab_tax抓取提示：", win32con.MB_OK)
-        except_send_email(content=log_message_list, ec=None)
-        log_message_list.clear()
+        if not log_message_list:
+            pass
+        else:
+            except_send_email(content=log_message_list, ec=None)
+            log_message_list.clear()
     else:
         pass
 
