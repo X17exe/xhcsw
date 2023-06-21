@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
+    <file url="file://$PROJECT_DIR$/tax_crawling/chromedebugwindow.bat" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/tax_crawling/configure.yml" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/tax_crawling/file_analysis_json.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/tax_crawling/monitor_downloadtax.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/tax_crawling/run.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/tax_crawling/setup.py" charset="UTF-8" />
+    <file url="PROJECT" charset="UTF-8" />
+  </component>
+</project>

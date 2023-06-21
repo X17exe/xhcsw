@@ -12,17 +12,22 @@ rabbitmq:
     exchange: 'hgBill.autoGetTax.topic.exchange'
     queue: 'hgBill.autoGetTax'
     routing_key: 'hgBill.autoGetTax'
+    start_time: 2
+    end_time: 4
 
 #税费文件上传接口配置
 upload_api:
     # 税单、货单二进制文件流数据上传接口
-    tax_goods_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadBillMultipart/'
+    #tax_goods_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadBillMultipart/'
+    tax_goods_api: 'https://api.delchannel.com/customs/hgBill/declare/uploadBillMultipart/'
 
     # 税费json对象上传接口：
-    tax_json_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadTaxJson'
+    #tax_json_api: 'https://xht.sunron.net/api/import/operationCustomsBillReportInfo/declare/uploadTaxJson'
+    tax_json_api: 'https://api.delchannel.com/customs/hgBill/declare/uploadTaxJson'
 
     #mq接口访问地址
     rabbitmq: 'http://192.168.2.80:15672/api/queues/%2F/hgBill.autoGetTax'
+    #rabbitmq: 'http://120.78.14.125:15672/api/queues/%2F/hgBill.autoGetTax3'
 
 # 抓取模式
 grab_mode:
@@ -36,7 +41,6 @@ localfile:
     save_path: 'C:/taxefile/'
     uploaded_path: 'C:/uploadedtax/'
     uploadfail_path: 'C:/uploadfailtax/'
-    #chromedebugwindow: 'C:/dist/run/chromedebugwindow.bat'
     chromedebugwindow: 'C:/Users/admin/Desktop/chromedebugwindow.bat'
 
 #邮箱配置

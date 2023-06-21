@@ -29,8 +29,8 @@ def read_yaml():
     """
     读取配置文件
     """
-    with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
-    # with open('C:/dist_dl/run/configure.yml', encoding="utf-8") as y:
+    # with open('D:/workspace/xht_sw/tax_crawling/configure.yml', encoding="utf-8") as y:
+    with open('C:/dist_dl/run/configure.yml', encoding="utf-8") as y:
         yaml_data = yaml.safe_load(y)
     return yaml_data
 
